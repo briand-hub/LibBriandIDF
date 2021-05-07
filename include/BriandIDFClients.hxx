@@ -147,6 +147,8 @@ namespace Briand {
 		mbedtls_ssl_config conf;
 		/** Mbedtls certificate chain */
 		mbedtls_x509_crt cacert;
+		/** Minimum RSA key size in bits */
+		unsigned short min_rsa_key_size;
 		/** Flag */
 		bool caChainLoaded;
 		/** Flag */
@@ -173,6 +175,12 @@ namespace Briand {
 		 * @param timeout Timeout in seconds (default 30)
 		*/
 		virtual void SetTimeout(const unsigned short& seconds);
+
+		/**
+		 * Set the minimum allowed RSA Key size (default 2048).
+		 * @param keySize Key size, in bits (default 2048)
+		*/
+		virtual void SetMinRsaKeySize(const unsigned short& keySize);
 
 		/** 
 		 * Method set the Server's PEM CA certificate for the connection. Can be multiple, one following the other.

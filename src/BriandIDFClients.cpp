@@ -198,6 +198,7 @@ namespace Briand {
 		this->CLIENT_NAME = string("BriandIDFSocketTlsClient");
 		this->caChainLoaded = false;
 		this->caChainFailed = true;
+		this->min_rsa_key_size = 2048;
 
 		// Setup resources
 		this->SetupResources();
@@ -265,6 +266,10 @@ namespace Briand {
 		if (this->resourcesReady) {
 			mbedtls_ssl_conf_read_timeout(&this->conf, this->TIMEOUT_S*1000);
 		}
+	}
+
+	void BriandIDFSocketTlsClient::SetMinRsaKeySize(const unsigned short& keySize) {
+		this->min_rsa_key_size = keySize;
 	}
 
 	void BriandIDFSocketTlsClient::SetCACertificateChainPEM(const string& pemCAcertificate) {
@@ -374,7 +379,12 @@ namespace Briand {
 
 		if (this->VERBOSE) printf("[%s] Socket ready, configuring SSL.\n", this->CLIENT_NAME.c_str());
 
-		// Setup with defaults
+		// Setup with defaults, but allow custom key size
+		mbedtls_x509_crt_profile customProfile;
+		memcpy(&customProfile, &mbedtls_x509_crt_profile_default, sizeof(mbedtls_x509_crt_profile_default) );
+		customProfile.rsa_min_bitlen = this->min_rsa_key_size;
+		mbedtls_ssl_conf_cert_profile(&this->conf, &customProfile);
+		
 		ret = mbedtls_ssl_config_defaults(&this->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
 		if (ret != 0) {
 			auto errBuf = make_unique<char[]>(this->ERR_BUF_SIZE);
@@ -439,7 +449,7 @@ namespace Briand {
 		}
 
 		if (this->VERBOSE) printf("[%s] SSL handshake done.\n", this->CLIENT_NAME.c_str());
-
+		
 		// Verify certificates, if loaded
 		if (this->caChainLoaded && !this->caChainFailed) {
 			unsigned long int flags = mbedtls_ssl_get_verify_result(&this->ssl);
