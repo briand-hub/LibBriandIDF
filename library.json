@@ -1,0 +1,24 @@
+{
+	"name": "LibBriandIDF",
+	"version": "1.0.0",
+	"description": "C++17 Utility library for ESP32 IDF Framework.",
+  	"keywords": "idf, esp32, espressif, mbedtls",
+	"repository":
+	{
+		"type": "git",
+		"url": "https://github.com/briand-hub/LibBriandIDF"
+	},
+	"authors":
+	{
+		"name": "briand",
+		"email": "brian_d@tutanota.com",
+		"url": "https://www.github.com/briand-hub"
+	},
+	"license": "GPL3",
+	"frameworks": ["espidf"],
+	"platforms": ["espressif32"],
+	"build": {
+		"unflags": ["-fno-exceptions", "-std=gnu++11"],
+		"flags": ["-fexceptions", "-std=gnu++17"]
+	}
+}
