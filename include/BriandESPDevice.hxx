@@ -29,6 +29,7 @@ using namespace std;
 namespace Briand {
     /* Utility class to get (or set) informations about device. */
     class BriandESPDevice {
+        public:
 
         static bool HasPSram() {
             esp_spiram_init_cache();
