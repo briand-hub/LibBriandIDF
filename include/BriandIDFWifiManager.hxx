@@ -17,7 +17,7 @@
 #include <memory>
 
 // Esp specific
-#include <esp_log.h>
+#include <esp_wifi.h>
 
 using namespace std;
 
