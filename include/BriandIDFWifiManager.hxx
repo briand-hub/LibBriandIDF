@@ -16,6 +16,9 @@
 #include <iostream>
 #include <memory>
 
+// Esp specific
+#include <esp_log.h>
+
 using namespace std;
 
 namespace Briand
