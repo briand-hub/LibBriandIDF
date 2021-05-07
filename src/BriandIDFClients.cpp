@@ -385,6 +385,10 @@ namespace Briand {
 		customProfile.rsa_min_bitlen = this->min_rsa_key_size;
 		mbedtls_ssl_conf_cert_profile(&this->conf, &customProfile);
 		
+		//
+		// TODO: verify timeout, seems not working correctly
+		//
+
 		ret = mbedtls_ssl_config_defaults(&this->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
 		if (ret != 0) {
 			auto errBuf = make_unique<char[]>(this->ERR_BUF_SIZE);
