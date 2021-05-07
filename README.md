@@ -9,6 +9,12 @@ In your platformio.ini file add:
 lib_deps = https://github.com/briand-hub/LibBriandIDF
 ```
 
+Or, for specific version:
+
+```ini
+lib_deps = https://github.com/briand-hub/LibBriandIDF@1.0.0
+```
+
 Rember to enable C++17 support as follows:
 
 1. Add build/unbuild flags 
