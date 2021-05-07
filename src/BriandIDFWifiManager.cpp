@@ -20,6 +20,7 @@
 #include <string.h>
 
 #include <esp_wifi.h>
+#include <esp_netif.h>
 #include <esp_log.h>
 
 using namespace std;
@@ -73,6 +74,29 @@ namespace Briand {
 			esp_log_level_set("esp_netif_handler", ESP_LOG_INFO);
 			esp_log_level_set("phy", ESP_LOG_INFO);
 			esp_log_level_set("system_api", ESP_LOG_INFO);
+		}
+	}
+
+	wifi_mode_t BriandIDFWifiManager::GetWifiMode() {
+		// Temp for error management
+		esp_err_t err;
+
+		wifi_mode_t mode = WIFI_MODE_NULL;
+		err = esp_wifi_get_mode(&mode);
+		if (err != ESP_OK && this->VERBOSE) {
+			cout << "[WIFI MANAGER] Error occoured on get wifi mode: " << esp_err_to_name(err) << endl;
+		}
+
+		return mode;
+	}
+
+	void BriandIDFWifiManager::SetWifiMode(wifi_mode_t mode) {
+		// Temp for error management
+		esp_err_t err;
+
+		err = esp_wifi_set_mode(mode);
+		if (err != ESP_OK && this->VERBOSE) {
+			cout << "[WIFI MANAGER] Error occoured on set wifi mode: " << esp_err_to_name(err) << endl;
 		}
 	}
 
@@ -229,6 +253,12 @@ namespace Briand {
 	bool BriandIDFWifiManager::ConnectStation(const string& essid, const string& password, const int& timeoutSeconds, const string& ovverrideHostname /*= ""*/, const bool& changeMacToRandom/*= true*/) {
 		// Temp for error management
 		esp_err_t err;
+
+		// Check current mode
+		if (this->GetWifiMode() == WIFI_MODE_AP)
+			this->SetWifiMode(WIFI_MODE_APSTA);
+		else if (this->GetWifiMode() != WIFI_MODE_APSTA)
+			this->SetWifiMode(WIFI_MODE_STA);
 		
 		if (!this->INITIALIZED) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] (STA) Error, interfaces not initalized enable verbose/logging for details.." << endl;
@@ -360,6 +390,12 @@ namespace Briand {
 	bool BriandIDFWifiManager::StartAP(const string& essid, const string& password, const unsigned char& channel, const unsigned char& maxConnections, const bool& changeMacToRandom /* = true*/) {
 		// Temp for error management
 		esp_err_t err;
+
+		// Check current mode
+		if (this->GetWifiMode() == WIFI_MODE_STA)
+			this->SetWifiMode(WIFI_MODE_APSTA);
+		else if (this->GetWifiMode() != WIFI_MODE_APSTA)
+			this->SetWifiMode(WIFI_MODE_AP);
 		
 		this->AP_READY = false;
 
@@ -422,11 +458,92 @@ namespace Briand {
 
 	void BriandIDFWifiManager::StopAP() {
 		// No method to stop AP, just reset mode.
-		esp_wifi_set_mode(WIFI_MODE_STA);
+		if (this->GetWifiMode() == WIFI_MODE_APSTA)
+			this->SetWifiMode(WIFI_MODE_STA);
+		else if (this->GetWifiMode() == WIFI_MODE_AP)
+			this->SetWifiMode(WIFI_MODE_NULL);
 	}
 
 	void BriandIDFWifiManager::StopWIFI() { 
 		esp_wifi_stop();
+	}
+
+	string BriandIDFWifiManager::GetApIP() {
+		if (!this->INITIALIZED)
+			return "";
+
+		// Temp for error management
+		esp_err_t err;
+
+		esp_netif_ip_info_t info;
+
+		err = esp_netif_get_ip_info(this->interfaceAP, &info);
+		if (err != ESP_OK && this->VERBOSE) {
+			cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
+			return "";
+		}
+		
+		auto buf = make_unique<char[]>(16);
+		esp_ip4addr_ntoa(&info.ip, buf.get(), 15);
+
+		return string(buf.get());
+	}
+
+	string BriandIDFWifiManager::GetStaIP() {
+		if (!this->INITIALIZED)
+			return "";
+
+		// Temp for error management
+		esp_err_t err;
+
+		esp_netif_ip_info_t info;
+
+		err = esp_netif_get_ip_info(this->interfaceSTA, &info);
+		if (err != ESP_OK && this->VERBOSE) {
+			cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
+			return "";
+		}
+		
+		auto buf = make_unique<char[]>(16);
+		esp_ip4addr_ntoa(&info.ip, buf.get(), 15);
+
+		return string(buf.get());
+	}
+
+	string BriandIDFWifiManager::GetApMAC() {
+		if (!this->INITIALIZED)
+			return "";
+
+		// Temp for error management
+		esp_err_t err;
+
+		auto mac = make_unique<unsigned char[]>(6);
+
+		err = esp_netif_get_mac(this->interfaceAP, mac.get());
+		if (err != ESP_OK && this->VERBOSE) {
+			cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
+			return "";
+		}
+
+		return string(reinterpret_cast<const char*>(mac.get()));
+	}
+
+	string BriandIDFWifiManager::GetStaMAC() {
+		if (!this->INITIALIZED)
+			return "";
+
+		// Temp for error management
+		esp_err_t err;
+
+		auto mac = make_unique<unsigned char[]>(6);
+
+		err = esp_netif_get_mac(this->interfaceSTA, mac.get());
+		if (err != ESP_OK && this->VERBOSE) {
+			cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
+			return "";
+		}
+
+		return string(reinterpret_cast<const char*>(mac.get()));
 	}
 
 }

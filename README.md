@@ -79,6 +79,10 @@ All objects has a SetVerbose method that accept at least one bool parameter. If 
 obj->SetVerbose(false);  // no stdout output
 ```
 
+### ESP Device
+
+Is a simple class with static methods to get (or set) informations about ESP32, for example heap size, cpu frequency and so on.
+
 ### Wi-Fi management object
 
 A singleton-pattern object is used, called BriandIDFWifiManager. You can refer to instance using:

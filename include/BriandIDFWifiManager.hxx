@@ -84,6 +84,18 @@ namespace Briand
 		static BriandIDFWifiManager* GetInstance();
 
 		/**
+		 * Return current wifi mode.
+		 * @return one of WIFI_MODE_NULL, WIFI_MODE_STA, WIFI_MODE_AP, WIFI_MODE_APSTA
+		*/
+		wifi_mode_t GetWifiMode();
+
+		/**
+		 * Sets the wifi mode.
+		 * @param mode one of WIFI_MODE_NULL, WIFI_MODE_STA, WIFI_MODE_AP, WIFI_MODE_APSTA
+		*/
+		void SetWifiMode(wifi_mode_t mode);
+
+		/**
 		 * Set output to console (true) or not.
 		 * @param verbose (true/false)
 		 * @param disableEspWifiLog disable the ESP wifi log if true, re-enables if false.
@@ -136,5 +148,29 @@ namespace Briand
 		 * @returns true if AP ready
 		*/
 		bool IsAPReady();
+
+		/**
+		 * Method returns STA ip address, string format
+		 * @return ip address
+		*/
+		string GetStaIP();
+
+		/**
+		 * Method returns AP ip address, string format
+		 * @return ip address
+		*/
+		string GetApIP();
+
+		/**
+		 * Method returns STA MAC address, string format
+		 * @return MAC address
+		*/
+		string GetStaMAC();
+
+		/**
+		 * Method returns AP MAC address, string format
+		 * @return MAC address
+		*/
+		string GetApMAC();
 	};
 }
