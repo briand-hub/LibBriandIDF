@@ -17,6 +17,8 @@
 
 #include <iostream>
 #include <memory>
+#include <sstream>
+#include <iomanip>
 #include <string.h>
 
 #include <esp_wifi.h>
@@ -47,9 +49,15 @@ namespace Briand {
 		this->STA_IF_READY = false;
 		this->interfaceAP = NULL;
 		this->interfaceSTA = NULL;
-		
+
 		// Init interfaces
 		this->InitInterfaces();
+
+		// Set default mode AP+STA
+		this->SetWifiMode(WIFI_MODE_APSTA);
+
+		// Output
+		if (this->VERBOSE) cout << endl << endl << "[WIFI MANAGER] Constructor set wifi mode to: " << this->GetWifiMode() << endl << endl;
 	}
 
 	BriandIDFWifiManager::~BriandIDFWifiManager() {
@@ -253,6 +261,8 @@ namespace Briand {
 	bool BriandIDFWifiManager::ConnectStation(const string& essid, const string& password, const int& timeoutSeconds, const string& ovverrideHostname /*= ""*/, const bool& changeMacToRandom/*= true*/) {
 		// Temp for error management
 		esp_err_t err;
+		
+		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi mode is: " << this->GetWifiMode() << endl;
 
 		// Check current mode
 		if (this->GetWifiMode() == WIFI_MODE_AP)
@@ -260,6 +270,8 @@ namespace Briand {
 		else if (this->GetWifiMode() != WIFI_MODE_APSTA)
 			this->SetWifiMode(WIFI_MODE_STA);
 		
+		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi set to: " << this->GetWifiMode() << endl;
+
 		if (!this->INITIALIZED) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] (STA) Error, interfaces not initalized enable verbose/logging for details.." << endl;
 			return false;
@@ -391,11 +403,15 @@ namespace Briand {
 		// Temp for error management
 		esp_err_t err;
 
+		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi mode is: " << this->GetWifiMode() << endl;
+
 		// Check current mode
 		if (this->GetWifiMode() == WIFI_MODE_STA)
 			this->SetWifiMode(WIFI_MODE_APSTA);
 		else if (this->GetWifiMode() != WIFI_MODE_APSTA)
 			this->SetWifiMode(WIFI_MODE_AP);
+
+		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi set to: " << this->GetWifiMode() << endl;
 		
 		this->AP_READY = false;
 
@@ -519,13 +535,19 @@ namespace Briand {
 
 		auto mac = make_unique<unsigned char[]>(6);
 
-		err = esp_netif_get_mac(this->interfaceAP, mac.get());
+		err = esp_wifi_get_mac(WIFI_IF_AP, mac.get());
 		if (err != ESP_OK && this->VERBOSE) {
 			cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
 			return "";
 		}
 
-		return string(reinterpret_cast<const char*>(mac.get()));
+		ostringstream sbuf("");
+		for (char i=0; i<6; i++) {
+			sbuf << std::hex << std::setfill('0') << std::setw(2) << static_cast<short>(mac[i]);
+			if (i<5) sbuf << ":";
+		}
+
+		return sbuf.str();
 	}
 
 	string BriandIDFWifiManager::GetStaMAC() {
@@ -537,13 +559,19 @@ namespace Briand {
 
 		auto mac = make_unique<unsigned char[]>(6);
 
-		err = esp_netif_get_mac(this->interfaceSTA, mac.get());
+		err = esp_wifi_get_mac(WIFI_IF_STA, mac.get());
 		if (err != ESP_OK && this->VERBOSE) {
 			cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
 			return "";
 		}
 
-		return string(reinterpret_cast<const char*>(mac.get()));
+		ostringstream sbuf("");
+		for (char i=0; i<6; i++) {
+			sbuf << std::hex << std::setfill('0') << std::setw(2) << static_cast<short>(mac[i]);
+			if (i<5) sbuf << ":";
+		}
+
+		return sbuf.str();
 	}
 
 }

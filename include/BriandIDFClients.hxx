@@ -46,7 +46,6 @@ namespace Briand {
 		string CLIENT_NAME;
 		bool VERBOSE;
 		bool CONNECTED;
-		bool MORE_BYTES;
 		unsigned short TIMEOUT_S;
 		unsigned short RECV_BUF_SIZE;
 		int _socket;
@@ -116,11 +115,15 @@ namespace Briand {
 		virtual unique_ptr<vector<unsigned char>> ReadData(bool oneChunk = false);
 
 		/**
-		 * Check if the socket has data available for reading
-		 * @return true if more bytes are available
+		 * Return number of available bytes that could be read
+		 * @return number of waiting bytes
 		*/
-		virtual bool HasMoreBytes();
+		virtual int AvailableBytes();
+
 	};
+
+
+
 
 	/** 
 	 * 
@@ -228,5 +231,11 @@ namespace Briand {
 		 * @return Pointer to vector with read data, empty if fails.
 		*/
 		virtual unique_ptr<vector<unsigned char>> ReadData(bool oneChunk = false);
+
+		/**
+		 * Return number of available bytes that could be read
+		 * @return number of waiting bytes
+		*/
+		virtual int AvailableBytes();
 	};
 }

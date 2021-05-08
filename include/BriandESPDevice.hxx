@@ -16,8 +16,10 @@
 #include <iostream>
 #include <memory>
 
+#include <sdkconfig.h>
 #include <esp_heap_caps.h>
-#include <esp_spiram.h>
+#include <esp32/spiram.h>
+#include <esp32/himem.h>
 #include <hal/cpu_hal.h>
 #include <soc/rtc.h>
 #include <soc/soc.h>
@@ -31,17 +33,58 @@ namespace Briand {
     class BriandESPDevice {
         public:
 
-        static bool HasPSram() {
-            esp_spiram_init_cache();
-            if (!esp_spiram_test()) {
-                return false;
-            }
-            if (esp_spiram_add_to_heapalloc() != ESP_OK) {
-                return false;
+        // Enable only if SDKCONFIG spiram is enabled
+
+        //
+        // TODO: resolve linker error undefined reference to `esp_spiram_init_cache()
+        //
+        
+        //#ifdef CONFIG_SPIRAM
+        #ifdef BRIAND_DISABLE
+
+            static void PSramInit() {
+                esp_spiram_init();
             }
 
-            return true;
-        }
+            static bool HasPSram() {
+                esp_spiram_init_cache();
+                if (!esp_spiram_test()) {
+                    return false;
+                }
+                if (esp_spiram_add_to_heapalloc() != ESP_OK) {
+                    return false;
+                }
+
+                return true;
+            }
+
+            /**
+             * Returns total PSram if available
+            */
+            static unsigned long GetPsramSize()
+            {
+                if(HasPSram()){
+                    multi_heap_info_t info;
+                    heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+                    return info.total_free_bytes + info.total_allocated_bytes;
+                }
+
+                return 0;
+            }
+
+            /**
+             * Returns free PSram if available
+            */
+            static unsigned long GetFreePsram()
+            {
+                if(HasPSram()){
+                    return heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
+                }
+
+                return 0;
+            }
+
+        #endif
 
         /**
          * Returns total heap size
@@ -59,32 +102,6 @@ namespace Briand {
             multi_heap_info_t info;
             heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
             return info.total_free_bytes;
-        }
-
-        /**
-         * Returns total PSram if available
-        */
-        static unsigned long GetPsramSize()
-        {
-            if(HasPSram()){
-                multi_heap_info_t info;
-                heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
-                return info.total_free_bytes + info.total_allocated_bytes;
-            }
-
-            return 0;
-        }
-
-        /**
-         * Returns free PSram if available
-        */
-        static unsigned long GetFreePsram()
-        {
-            if(HasPSram()){
-                return heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-            }
-
-            return 0;
         }
 
         /**

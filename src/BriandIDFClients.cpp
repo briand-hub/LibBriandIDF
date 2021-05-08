@@ -41,7 +41,6 @@ namespace Briand {
 		this->VERBOSE = false;
 		this->TIMEOUT_S = 30;
 		this->RECV_BUF_SIZE = 64;
-		this->MORE_BYTES = false;
 		this->_socket = -1;
 	}
 
@@ -94,6 +93,8 @@ namespace Briand {
 		}
 
 		// Make a DNS request, then call the main Connect.
+
+		// TODO : IPv6 support
 		
 		constexpr struct addrinfo hints = {
 			.ai_family = AF_INET,
@@ -146,16 +147,10 @@ namespace Briand {
 		return true;
 	}
 
-	bool BriandIDFSocketClient::HasMoreBytes() {
-		return this->MORE_BYTES;
-	}
-
 	unique_ptr<vector<unsigned char>> BriandIDFSocketClient::ReadData(bool oneChunk /* = false*/) {
 		auto data = make_unique<vector<unsigned char>>();
 
 		if (!this->CONNECTED) return std::move(data);
-
-		this->MORE_BYTES = false;
 
 		//Set timeout for socket
 		struct timeval receiving_timeout;
@@ -175,12 +170,20 @@ namespace Briand {
 			if (receivedBytes > 0) {
 				data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + receivedBytes);
 			}
-			this->MORE_BYTES = (receivedBytes > 0);
 		} while(receivedBytes > 0 && !oneChunk);
 
-		if (this->VERBOSE) printf("[%s] Received %d bytes. %s\n", this->CLIENT_NAME.c_str(), data->size(), (this->MORE_BYTES ? "More bytes are available." : "No more bytes available."));
+		if (this->VERBOSE) printf("[%s] Received %d bytes. %s\n", this->CLIENT_NAME.c_str(), data->size(), ((this->AvailableBytes() > 0) ? "More bytes are available." : "No more bytes available."));
 
 		return std::move(data);
+	}
+
+	int BriandIDFSocketClient::AvailableBytes() {
+		int bytes_avail = 0;
+
+		if (this->CONNECTED)
+			ioctl(this->_socket, FIONREAD, &bytes_avail);
+
+		return bytes_avail;
 	}
 
 
@@ -523,8 +526,6 @@ namespace Briand {
 
 		if (!this->CONNECTED) return std::move(data);
 
-		this->MORE_BYTES = false;
-
 		// Read until bytes received or jsut one chunk requested
 		int ret;
 		do {
@@ -554,12 +555,19 @@ namespace Briand {
 			// if > 0 then bytes!
 			if (ret > 0) data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + ret);
 
-			this->MORE_BYTES = (ret > 0);
-
 		} while(ret != 0 && !oneChunk);
 
-		if (this->VERBOSE) printf("[%s] Received %d bytes. %s\n", this->CLIENT_NAME.c_str(), data->size(), (this->MORE_BYTES ? "More bytes are available." : "No more bytes available."));
+		if (this->VERBOSE) printf("[%s] Received %d bytes. %s\n", this->CLIENT_NAME.c_str(), data->size(), ((this->AvailableBytes() > 0) ? "More bytes are available." : "No more bytes available."));
 
 		return std::move(data);
+	}
+
+	int BriandIDFSocketTlsClient::AvailableBytes() {
+		int bytes_avail = 0;
+
+		if (this->CONNECTED)
+			bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
+
+		return bytes_avail;
 	}
 }
