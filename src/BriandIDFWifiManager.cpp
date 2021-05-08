@@ -91,8 +91,8 @@ namespace Briand {
 
 		wifi_mode_t mode = WIFI_MODE_NULL;
 		err = esp_wifi_get_mode(&mode);
-		if (err != ESP_OK && this->VERBOSE) {
-			cout << "[WIFI MANAGER] Error occoured on get wifi mode: " << esp_err_to_name(err) << endl;
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on get wifi mode: " << esp_err_to_name(err) << endl;
 		}
 
 		return mode;
@@ -103,8 +103,8 @@ namespace Briand {
 		esp_err_t err;
 
 		err = esp_wifi_set_mode(mode);
-		if (err != ESP_OK && this->VERBOSE) {
-			cout << "[WIFI MANAGER] Error occoured on set wifi mode: " << esp_err_to_name(err) << endl;
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on set wifi mode: " << esp_err_to_name(err) << endl;
 		}
 	}
 
@@ -270,7 +270,7 @@ namespace Briand {
 		else if (this->GetWifiMode() != WIFI_MODE_APSTA)
 			this->SetWifiMode(WIFI_MODE_STA);
 		
-		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi set to: " << this->GetWifiMode() << endl;
+		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi mode set to: " << this->GetWifiMode() << endl;
 
 		if (!this->INITIALIZED) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] (STA) Error, interfaces not initalized enable verbose/logging for details.." << endl;
@@ -394,6 +394,8 @@ namespace Briand {
 
 		err = esp_wifi_disconnect();
 
+		this->STA_CONNECTED = false;
+
 		if (err != ESP_OK) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] Station disconnect failed: " << esp_err_to_name(err) << endl;
 		}
@@ -411,7 +413,7 @@ namespace Briand {
 		else if (this->GetWifiMode() != WIFI_MODE_APSTA)
 			this->SetWifiMode(WIFI_MODE_AP);
 
-		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi set to: " << this->GetWifiMode() << endl;
+		if (this->VERBOSE) cout << "[WIFI MANAGER] Wifi mode set to: " << this->GetWifiMode() << endl;
 		
 		this->AP_READY = false;
 
@@ -478,6 +480,8 @@ namespace Briand {
 			this->SetWifiMode(WIFI_MODE_STA);
 		else if (this->GetWifiMode() == WIFI_MODE_AP)
 			this->SetWifiMode(WIFI_MODE_NULL);
+
+		this->AP_READY = false;
 	}
 
 	void BriandIDFWifiManager::StopWIFI() { 
@@ -494,8 +498,8 @@ namespace Briand {
 		esp_netif_ip_info_t info;
 
 		err = esp_netif_get_ip_info(this->interfaceAP, &info);
-		if (err != ESP_OK && this->VERBOSE) {
-			cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
 			return "";
 		}
 		
@@ -515,8 +519,8 @@ namespace Briand {
 		esp_netif_ip_info_t info;
 
 		err = esp_netif_get_ip_info(this->interfaceSTA, &info);
-		if (err != ESP_OK && this->VERBOSE) {
-			cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
 			return "";
 		}
 		
@@ -536,8 +540,8 @@ namespace Briand {
 		auto mac = make_unique<unsigned char[]>(6);
 
 		err = esp_wifi_get_mac(WIFI_IF_AP, mac.get());
-		if (err != ESP_OK && this->VERBOSE) {
-			cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
 			return "";
 		}
 
@@ -560,8 +564,8 @@ namespace Briand {
 		auto mac = make_unique<unsigned char[]>(6);
 
 		err = esp_wifi_get_mac(WIFI_IF_STA, mac.get());
-		if (err != ESP_OK && this->VERBOSE) {
-			cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting mac from interface: " << esp_err_to_name(err) << endl;
 			return "";
 		}
 
@@ -572,6 +576,127 @@ namespace Briand {
 		}
 
 		return sbuf.str();
+	}
+
+	bool BriandIDFWifiManager::SetApIPv4(const unsigned char& a, const unsigned char& b,const unsigned char& c, const unsigned char& d) {
+		esp_err_t err;
+		esp_netif_ip_info_t info;
+		esp_netif_dhcp_status_t dhcp;
+
+		// Check if DHCP server is enabled
+		
+		err = esp_netif_dhcps_get_status(this->interfaceAP, &dhcp);
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting dhcp server status from interface: " << esp_err_to_name(err) << endl;
+			return false;
+		}
+
+		if (dhcp != ESP_NETIF_DHCP_STOPPED && dhcp != ESP_NETIF_DHCP_INIT) {
+			err = esp_netif_dhcps_stop(this->interfaceAP);
+			if (err != ESP_OK) {
+				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on stopping dhcp server from interface: " << esp_err_to_name(err) << endl;
+				return false;
+			}
+		}
+		
+		// Set new IP
+
+		err = esp_netif_get_ip_info(this->interfaceAP, &info);
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
+			return false;
+		}
+
+		esp_netif_set_ip4_addr(&info.ip, a, b, c, d);
+
+		err = esp_netif_set_ip_info(this->interfaceAP, &info);
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on set IP: " << esp_err_to_name(err) << endl;
+			return false;
+		}
+
+		// If the DHCP server was enabled re-enable.
+		if (dhcp != ESP_NETIF_DHCP_STOPPED && dhcp != ESP_NETIF_DHCP_INIT) {
+			err = esp_netif_dhcps_start(this->interfaceAP);
+			if (err != ESP_OK) {
+				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on restarting dhcp server from interface: " << esp_err_to_name(err) << endl;
+				return false;
+			}
+		}
+		
+		return true;
+	}
+
+	void BriandIDFWifiManager::SetApDHCPServer(const bool& enabled) {
+		esp_err_t err;
+
+		if (enabled) {
+			err = esp_netif_dhcps_start(this->interfaceAP);
+			if (err != ESP_OK) {
+				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on starting dhcp server from interface: " << esp_err_to_name(err) << endl;
+			}
+		}
+		else {
+			err = esp_netif_dhcps_stop(this->interfaceAP);
+			if (err != ESP_OK) {
+				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on starting dhcp server from interface: " << esp_err_to_name(err) << endl;
+			}
+		}
+	}
+
+	bool BriandIDFWifiManager::SetStaIPv4(const unsigned char& a, const unsigned char& b,const unsigned char& c, const unsigned char& d) {
+		esp_err_t err;
+		esp_netif_ip_info_t info;
+		esp_netif_dhcp_status_t dhcp;
+
+		// Check if DHCP enabled
+		
+		err = esp_netif_dhcps_get_status(this->interfaceSTA, &dhcp);
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting dhcp status from interface: " << esp_err_to_name(err) << endl;
+			return false;
+		}
+
+		if (dhcp != ESP_NETIF_DHCP_STOPPED && dhcp != ESP_NETIF_DHCP_INIT) {
+			err = esp_netif_dhcpc_stop(this->interfaceSTA);
+			if (err != ESP_OK) {
+				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on stopping dhcp from interface: " << esp_err_to_name(err) << endl;
+				return false;
+			}
+		}
+		
+		err = esp_netif_get_ip_info(this->interfaceSTA, &info);
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on getting info from interface: " << esp_err_to_name(err) << endl;
+			return false;
+		}
+
+		esp_netif_set_ip4_addr(&info.ip, a, b, c, d);
+
+		err = esp_netif_set_ip_info(this->interfaceSTA, &info);
+		if (err != ESP_OK) {
+			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on set IP: " << esp_err_to_name(err) << endl;
+			return false;
+		}
+		
+		return true;
+	}
+
+	void BriandIDFWifiManager::SetStaIPv4DHCPClient(const bool& enabled) {
+		esp_err_t err;
+		
+		if (enabled) {
+			err = esp_netif_dhcpc_start(this->interfaceSTA);
+			if (err != ESP_OK) {
+				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on starting dhcp client from interface: " << esp_err_to_name(err) << endl;
+			}
+		}
+		else {
+			err = esp_netif_dhcpc_stop(this->interfaceSTA);
+			if (err != ESP_OK) {
+				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on starting dhcp client from interface: " << esp_err_to_name(err) << endl;
+			}
+		}
 	}
 
 }

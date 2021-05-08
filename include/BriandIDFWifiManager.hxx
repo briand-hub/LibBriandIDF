@@ -172,5 +172,29 @@ namespace Briand
 		 * @return MAC address
 		*/
 		string GetApMAC();
+
+		/**
+		 * Method to set AP ipv4 address. Dhcp server will be stopped and restarted
+		 * @return true on success
+		*/
+		bool SetApIPv4(const unsigned char& a, const unsigned char& b,const unsigned char& c, const unsigned char& d);
+
+		/**
+		 * Method enables/disables dhcp server on AP
+		 * @return true on success
+		*/
+		void SetApDHCPServer(const bool& enabled);
+
+		/**
+		 * Method to set STA ipv4 address. Will disable any dhcp client!
+		 * @return true on success
+		*/
+		bool SetStaIPv4(const unsigned char& a, const unsigned char& b,const unsigned char& c, const unsigned char& d);
+
+		/**
+		 * Method enables/disables dhcp client on STA
+		 * @return true on success
+		*/
+		void SetStaIPv4DHCPClient(const bool& enabled);
 	};
 }
