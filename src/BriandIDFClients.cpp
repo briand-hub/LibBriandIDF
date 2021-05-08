@@ -389,7 +389,7 @@ namespace Briand {
 		}
 
 		// Handshake timeout
-		mbedtls_ssl_conf_handshake_timeout(&this->conf, 1000, this->TIMEOUT_S*1000);
+		// mbedtls_ssl_conf_handshake_timeout(&this->conf, 1000, this->TIMEOUT_S*1000);
 
 		// Set the security mode
 		if (this->caChainLoaded && !this->caChainFailed) {
