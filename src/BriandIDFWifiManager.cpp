@@ -301,8 +301,6 @@ namespace Briand {
 
 		long int timeout, now;
 
-		cout << "Connecting STA";
-
 		esp_event_handler_instance_t got_ip_event;
 
 		// Pass this object as argument to event manager
