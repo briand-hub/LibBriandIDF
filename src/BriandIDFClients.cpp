@@ -91,10 +91,9 @@ namespace Briand {
 
 		// TODO : IPv6 support
 		
-		constexpr struct addrinfo hints = {
-			.ai_family = AF_INET,
-			.ai_socktype = SOCK_STREAM,
-		};
+		struct addrinfo hints {};
+		hints.ai_family = AF_INET;
+		hints.ai_socktype = SOCK_STREAM;
 
 		struct addrinfo* res;
 
