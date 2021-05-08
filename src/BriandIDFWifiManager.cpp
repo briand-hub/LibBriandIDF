@@ -291,18 +291,6 @@ namespace Briand {
 		this->currentConfig.sta.pmf_cfg.capable = true;
 		this->currentConfig.sta.pmf_cfg.required = false;
 
-		// If still in AP mode, add STA
-		wifi_mode_t currentMode;
-		err = esp_wifi_get_mode(&currentMode);
-		if (err != ESP_OK || currentMode != WIFI_MODE_APSTA || currentMode != WIFI_MODE_AP)
-			err = esp_wifi_set_mode(WIFI_MODE_STA);
-		else
-			err = esp_wifi_set_mode(WIFI_MODE_APSTA);
-
-		if (err != ESP_OK) {
-			if (this->VERBOSE) cout << "[WIFI MANAGER] (STA) Error occoured during esp_wifi_set_mode: " << esp_err_to_name(err) << endl;
-			return false;
-		}
 		err = esp_wifi_set_config(WIFI_IF_STA, &this->currentConfig);
 		if (err != ESP_OK) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] (STA) Error occoured during esp_wifi_set_config: " << esp_err_to_name(err) << endl;
@@ -326,8 +314,8 @@ namespace Briand {
 		// Pass this object as argument to event manager
 		esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_STA_START, &BriandIDFWifiManager::WiFiEventHandler, this, &if_ready_change_hostname_event);
 
-		err = esp_wifi_start();
-		
+		// Always stop & restart
+		err = esp_wifi_start();		
 		if (err != ESP_OK) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] (STA) Error occoured during esp_wifi_start: " << esp_err_to_name(err) << endl;
 			return false;
@@ -393,12 +381,14 @@ namespace Briand {
 		esp_err_t err;
 
 		err = esp_wifi_disconnect();
-
-		this->STA_CONNECTED = false;
-
 		if (err != ESP_OK) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] Station disconnect failed: " << esp_err_to_name(err) << endl;
 		}
+
+		// Configuration reset, otherwise will not reconnect another time!
+		memset(&this->currentConfig.sta, 0, sizeof(currentConfig.sta));
+
+		this->STA_CONNECTED = false;
 	}
 
 	bool BriandIDFWifiManager::StartAP(const string& essid, const string& password, const unsigned char& channel, const unsigned char& maxConnections, const bool& changeMacToRandom /* = true*/) {
@@ -435,25 +425,10 @@ namespace Briand {
 		this->currentConfig.ap.max_connection = maxConnections;
 		this->currentConfig.ap.authmode = WIFI_AUTH_WPA_WPA2_PSK;
 		
-		// TODO : change IP?
-		//esp_netif_set_ip_info(this->interfaceAP,  );
-
 		if (password.length() == 0) {
 			this->currentConfig.ap.authmode = WIFI_AUTH_OPEN;
 		}
 
-		// If still in STA mode, add AP
-		wifi_mode_t currentMode;
-		err = esp_wifi_get_mode(&currentMode);
-		if (err != ESP_OK || currentMode != WIFI_MODE_APSTA || currentMode != WIFI_MODE_APSTA)
-			err = esp_wifi_set_mode(WIFI_MODE_AP);
-		else
-			err = esp_wifi_set_mode(WIFI_MODE_APSTA);
-
-		if (err != ESP_OK) {
-			if (this->VERBOSE) cout << "[WIFI MANAGER] (AP) Error occoured during esp_wifi_set_mode: " << esp_err_to_name(err) << endl;
-			return false;
-		}
 		err = esp_wifi_set_config(WIFI_IF_AP, &this->currentConfig);
 		if (err != ESP_OK) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] (AP) Error occoured during esp_wifi_set_config: " << esp_err_to_name(err) << endl;
@@ -480,6 +455,9 @@ namespace Briand {
 			this->SetWifiMode(WIFI_MODE_STA);
 		else if (this->GetWifiMode() == WIFI_MODE_AP)
 			this->SetWifiMode(WIFI_MODE_NULL);
+
+		// Configuration reset, otherwise will not reconnect another time!
+		memset(&this->currentConfig.ap, 0, sizeof(currentConfig.ap));
 
 		this->AP_READY = false;
 	}
@@ -591,7 +569,7 @@ namespace Briand {
 			return false;
 		}
 
-		if (dhcp != ESP_NETIF_DHCP_STOPPED && dhcp != ESP_NETIF_DHCP_INIT) {
+		if (dhcp != ESP_NETIF_DHCP_STOPPED) {
 			err = esp_netif_dhcps_stop(this->interfaceAP);
 			if (err != ESP_OK) {
 				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on stopping dhcp server from interface: " << esp_err_to_name(err) << endl;
@@ -616,7 +594,7 @@ namespace Briand {
 		}
 
 		// If the DHCP server was enabled re-enable.
-		if (dhcp != ESP_NETIF_DHCP_STOPPED && dhcp != ESP_NETIF_DHCP_INIT) {
+		if (dhcp != ESP_NETIF_DHCP_STOPPED) {
 			err = esp_netif_dhcps_start(this->interfaceAP);
 			if (err != ESP_OK) {
 				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on restarting dhcp server from interface: " << esp_err_to_name(err) << endl;
@@ -657,7 +635,7 @@ namespace Briand {
 			return false;
 		}
 
-		if (dhcp != ESP_NETIF_DHCP_STOPPED && dhcp != ESP_NETIF_DHCP_INIT) {
+		if (dhcp != ESP_NETIF_DHCP_STOPPED) {
 			err = esp_netif_dhcpc_stop(this->interfaceSTA);
 			if (err != ESP_OK) {
 				if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on stopping dhcp from interface: " << esp_err_to_name(err) << endl;
@@ -678,6 +656,8 @@ namespace Briand {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured on set IP: " << esp_err_to_name(err) << endl;
 			return false;
 		}
+
+		// DHCP client should not be restored if you called a IP change
 		
 		return true;
 	}

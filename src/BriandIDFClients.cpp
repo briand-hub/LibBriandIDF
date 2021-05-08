@@ -553,8 +553,6 @@ namespace Briand {
 				return std::move(data);
 			}
 
-			cout << "TEST: " << this->AvailableBytes() << endl;
-
 			// if ret is zero is EOF
 			// if > 0 then bytes!
 			if (ret > 0) data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + ret);
