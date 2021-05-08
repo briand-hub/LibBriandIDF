@@ -18,11 +18,6 @@
 #include <iostream>
 #include <memory>
 
-#include <lwip/sys.h>
-#include <lwip/dns.h>
-#include <lwip/sockets.h>
-#include <lwip/netdb.h>
-
 using namespace std;
 
 namespace Briand {
@@ -382,16 +377,7 @@ namespace Briand {
 
 		if (this->VERBOSE) printf("[%s] Socket ready, configuring SSL.\n", this->CLIENT_NAME.c_str());
 
-		// Setup with defaults, but allow custom key size
-		mbedtls_x509_crt_profile customProfile;
-		memcpy(&customProfile, &mbedtls_x509_crt_profile_default, sizeof(mbedtls_x509_crt_profile_default) );
-		customProfile.rsa_min_bitlen = this->min_rsa_key_size;
-		mbedtls_ssl_conf_cert_profile(&this->conf, &customProfile);
-		
-		//
-		// TODO: verify timeout, seems not working correctly
-		//
-
+		// Default configuration
 		ret = mbedtls_ssl_config_defaults(&this->conf, MBEDTLS_SSL_IS_CLIENT, MBEDTLS_SSL_TRANSPORT_STREAM, MBEDTLS_SSL_PRESET_DEFAULT);
 		if (ret != 0) {
 			auto errBuf = make_unique<char[]>(this->ERR_BUF_SIZE);
@@ -401,6 +387,9 @@ namespace Briand {
 			this->ReleaseResources();
 			return false;
 		}
+
+		// Handshake timeout
+		mbedtls_ssl_conf_handshake_timeout(&this->conf, 1000, this->TIMEOUT_S*1000);
 
 		// Set the security mode
 		if (this->caChainLoaded && !this->caChainFailed) {
@@ -526,6 +515,20 @@ namespace Briand {
 
 		if (!this->CONNECTED) return std::move(data);
 
+		// Set timeout
+		// NOT WORKING!!
+		//mbedtls_ssl_conf_read_timeout(&this->conf, this->TIMEOUT_S*1000);
+
+		//Set timeout for socket
+		struct timeval receiving_timeout;
+		receiving_timeout.tv_sec = this->TIMEOUT_S;
+		receiving_timeout.tv_usec = 0;
+		if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
+			if (this->VERBOSE) printf("[%s] Error on setting socket timeout.\n", this->CLIENT_NAME.c_str());
+			this->Disconnect();
+			return std::move(data);
+		}
+
 		// Read until bytes received or jsut one chunk requested
 		int ret;
 		do {
@@ -550,6 +553,8 @@ namespace Briand {
 				this->Disconnect();
 				return std::move(data);
 			}
+
+			cout << "TEST: " << this->AvailableBytes() << endl;
 
 			// if ret is zero is EOF
 			// if > 0 then bytes!

@@ -115,7 +115,7 @@ namespace Briand {
 		virtual unique_ptr<vector<unsigned char>> ReadData(bool oneChunk = false);
 
 		/**
-		 * Return number of available bytes that could be read
+		 * Return number of available bytes that could be read. WORKS AFTER CALLING FIRST ReadData()
 		 * @return number of waiting bytes
 		*/
 		virtual int AvailableBytes();
@@ -233,7 +233,7 @@ namespace Briand {
 		virtual unique_ptr<vector<unsigned char>> ReadData(bool oneChunk = false);
 
 		/**
-		 * Return number of available bytes that could be read
+		 * Return number of available bytes that could be read WORKS AFTER CALLING FIRST ReadData()
 		 * @return number of waiting bytes
 		*/
 		virtual int AvailableBytes();
