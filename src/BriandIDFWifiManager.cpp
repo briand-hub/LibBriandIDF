@@ -442,7 +442,7 @@ namespace Briand {
 
 		this->AP_READY = true;
 
-		cout << "[WIFI MANAGER] (AP) Started." << endl;
+		if (this->VERBOSE) cout << "[WIFI MANAGER] (AP) Started." << endl;
 
 		return true;
 	}
