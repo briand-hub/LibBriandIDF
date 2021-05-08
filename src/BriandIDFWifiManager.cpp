@@ -218,7 +218,7 @@ namespace Briand {
 		macAddress[4] = static_cast<unsigned char>( esp_random() % 0x100 );
 		macAddress[5] = static_cast<unsigned char>( esp_random() % 0x100 );
 
-		err = esp_wifi_set_mac(WIFI_IF_STA, macAddress.get());
+		err = esp_wifi_set_mac(interface, macAddress.get());
 		
 		if (err != ESP_OK) {
 			if (this->VERBOSE) cout << "[WIFI MANAGER] Error occoured during esp_wifi_set_mac: " << esp_err_to_name(err) << endl;
