@@ -386,7 +386,7 @@ namespace Briand {
 		}
 
 		// Configuration reset, otherwise will not reconnect another time!
-		memset(&this->currentConfig.sta, 0, sizeof(currentConfig.sta));
+		memset(&this->currentConfig.sta, 0, sizeof(this->currentConfig.sta));
 
 		this->STA_CONNECTED = false;
 	}
@@ -457,13 +457,15 @@ namespace Briand {
 			this->SetWifiMode(WIFI_MODE_NULL);
 
 		// Configuration reset, otherwise will not reconnect another time!
-		memset(&this->currentConfig.ap, 0, sizeof(currentConfig.ap));
+		memset(&this->currentConfig.ap, 0, sizeof(this->currentConfig.ap));
 
 		this->AP_READY = false;
 	}
 
 	void BriandIDFWifiManager::StopWIFI() { 
 		esp_wifi_stop();
+		// Configuration reset, otherwise will not reconnect another time!
+		memset(&this->currentConfig, 0, sizeof(this->currentConfig));
 	}
 
 	string BriandIDFWifiManager::GetApIP() {
