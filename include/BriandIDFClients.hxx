@@ -74,9 +74,9 @@ namespace Briand {
 		virtual void SetID(const int& id);
 
 		/**
-		 * Set timeout in seconds (default 30) for connect and for read/write (default 5 sec)
-		 * @param connectTimeout_s Connection timeout in seconds (default 30)
-		 * @param ioTimeout_s Read/write timeout in seconds (default 5)
+		 * Set timeout in seconds (default unlimited=0) for connect and for read/write (default unlimited=0)
+		 * @param connectTimeout_s Connection timeout in seconds (default unlimited = 0)
+		 * @param ioTimeout_s Read/write timeout in seconds (default unlimited = 5)
 		*/
 		virtual void SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s);
 
@@ -193,9 +193,9 @@ namespace Briand {
 		virtual void SetID(const int& id);
 
 		/**
-		 * Set timeout in seconds (default 30) for connect and for read/write (default 5 sec)
-		 * @param connectTimeout_s Connection timeout in seconds (default 30)
-		 * @param ioTimeout_s Read/write timeout in seconds (default 5)
+		 * Set timeout in seconds (default unlimited=0) for connect and for read/write (default unlimited=0)
+		 * @param connectTimeout_s Connection timeout in seconds (default unlimited = 0)
+		 * @param ioTimeout_s Read/write timeout in seconds (default unlimited = 5)
 		*/
 		virtual void SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s);
 

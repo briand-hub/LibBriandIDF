@@ -34,8 +34,8 @@ namespace Briand {
 		this->CLIENT_NAME = string("BriandIDFSocketClient");
 		this->CONNECTED = false;
 		this->VERBOSE = false;
-		this->CONNECT_TIMEOUT_S = 30;
-		this->IO_TIMEOUT_S = 5;
+		this->CONNECT_TIMEOUT_S = 0;
+		this->IO_TIMEOUT_S = 0;
 		this->RECV_BUF_SIZE = 64;
 		this->_socket = -1;
 	}
@@ -152,14 +152,16 @@ namespace Briand {
 
 		if (!this->CONNECTED) return std::move(data);
 
-		//Set timeout for socket
-		struct timeval receiving_timeout;
-		receiving_timeout.tv_sec = this->IO_TIMEOUT_S;
-		receiving_timeout.tv_usec = 0;
-		if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
-			if (this->VERBOSE) printf("[%s] Error on setting socket timeout.\n", this->CLIENT_NAME.c_str());
-			this->Disconnect();
-			return std::move(data);
+		if (this->IO_TIMEOUT_S > 0) {
+			//Set timeout for socket
+			struct timeval receiving_timeout;
+			receiving_timeout.tv_sec = this->IO_TIMEOUT_S;
+			receiving_timeout.tv_usec = 0;
+			if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
+				if (this->VERBOSE) printf("[%s] Error on setting socket timeout.\n", this->CLIENT_NAME.c_str());
+				this->Disconnect();
+				return std::move(data);
+			}
 		}
 
 		// Read until bytes received or just one chunk requested
@@ -272,7 +274,7 @@ namespace Briand {
 	void BriandIDFSocketTlsClient::SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s) {
 		this->CONNECT_TIMEOUT_S = connectTimeout_s;
 		this->IO_TIMEOUT_S = ioTimeout_s;
-		if (this->resourcesReady) {
+		if (this->resourcesReady && this-IO_TIMEOUT_S > 0) {
 			mbedtls_ssl_conf_read_timeout(&this->conf, this->IO_TIMEOUT_S*1000);
 		}
 	}
@@ -441,10 +443,14 @@ namespace Briand {
 
 		// Setup the functions that will be used for data read/write. 
 		// Added also timeout with mbedtls_net_recv_timeout
-		mbedtls_ssl_set_bio(&this->ssl, &this->tls_socket, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+		if (this->IO_TIMEOUT_S > 0)
+			mbedtls_ssl_set_bio(&this->ssl, &this->tls_socket, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+		else 
+			mbedtls_ssl_set_bio(&this->ssl, &this->tls_socket, mbedtls_net_send, mbedtls_net_recv, NULL);
 
 		// Set timeout (works only with mbedtls_net_recv_timeout on BIO setup!)
-		mbedtls_ssl_conf_read_timeout(&this->conf, this->IO_TIMEOUT_S*1000);
+		if (this->IO_TIMEOUT_S > 0)
+			mbedtls_ssl_conf_read_timeout(&this->conf, this->IO_TIMEOUT_S*1000);
 
 		if (this->VERBOSE) printf("[%s] Performing handshake.\n", this->CLIENT_NAME.c_str());
 
