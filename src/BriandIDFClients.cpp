@@ -40,6 +40,11 @@ namespace Briand {
 		this->_socket = -1;
 	}
 
+	BriandIDFSocketClient::BriandIDFSocketClient(const int& id) {
+		BriandIDFSocketClient();
+		this->CLIENT_NAME.append(" #") + std::to_string(id);
+	}
+
 	BriandIDFSocketClient::~BriandIDFSocketClient() {
 		if (this->CONNECTED) this->Disconnect();
 	}
@@ -202,6 +207,11 @@ namespace Briand {
 
 		// Setup resources
 		this->SetupResources();
+	}
+
+	BriandIDFSocketTlsClient::BriandIDFSocketTlsClient(const int& id) {
+		BriandIDFSocketTlsClient();
+		this->CLIENT_NAME.append(" #") + std::to_string(id);
 	}
 
 	BriandIDFSocketTlsClient::~BriandIDFSocketTlsClient() {

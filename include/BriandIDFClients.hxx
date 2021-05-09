@@ -55,7 +55,16 @@ namespace Briand {
 
 		public:
 
+		/** Constructor, initialize resources */
 		BriandIDFSocketClient();
+
+		/** 
+		 * Constructor, initialize resources.
+		 * @param id an optional ID that will be added for debugging
+		*/
+		BriandIDFSocketClient(const int& id);
+
+		/** Destructor, if connected disconnects and releases all resources */
 		~BriandIDFSocketClient();
 
 		/**
@@ -173,6 +182,12 @@ namespace Briand {
 
 		/** Constructor: initializes every resource (RNG, Entropy, context...) */
 		BriandIDFSocketTlsClient();
+
+		/**
+		 * Constructor, initialize resources.
+		 * @param id an optional ID that will be added for debugging
+		*/
+		BriandIDFSocketTlsClient(const int& id);
 
 		/** Destructor: every resource will be released (RNG, Entropy, context...) */
 		~BriandIDFSocketTlsClient();
