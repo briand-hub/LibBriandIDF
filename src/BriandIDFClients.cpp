@@ -39,12 +39,7 @@ namespace Briand {
 		this->RECV_BUF_SIZE = 64;
 		this->_socket = -1;
 	}
-
-	BriandIDFSocketClient::BriandIDFSocketClient(const int& id) {
-		BriandIDFSocketClient();
-		this->CLIENT_NAME.append(" #") + std::to_string(id);
-	}
-
+	
 	BriandIDFSocketClient::~BriandIDFSocketClient() {
 		if (this->CONNECTED) this->Disconnect();
 	}
@@ -53,6 +48,10 @@ namespace Briand {
 		this->VERBOSE = verbose;
 	}
 	
+	void BriandIDFSocketClient::SetID(const int& id) {
+		this->CLIENT_NAME = "BriandIDFSocketClient#" + std::to_string(id);
+	}
+
 	void BriandIDFSocketClient::SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s) {
 		this->CONNECT_TIMEOUT_S = connectTimeout_s;
 		this->IO_TIMEOUT_S = ioTimeout_s;
@@ -209,13 +208,12 @@ namespace Briand {
 		this->SetupResources();
 	}
 
-	BriandIDFSocketTlsClient::BriandIDFSocketTlsClient(const int& id) {
-		BriandIDFSocketTlsClient();
-		this->CLIENT_NAME.append(" #") + std::to_string(id);
-	}
-
 	BriandIDFSocketTlsClient::~BriandIDFSocketTlsClient() {
 		this->ReleaseResources();
+	}
+
+	void BriandIDFSocketTlsClient::SetID(const int& id) {
+		this->CLIENT_NAME = "BriandIDFSocketTlsClient#" + std::to_string(id);
 	}
 
 	void BriandIDFSocketTlsClient::SetupResources() {

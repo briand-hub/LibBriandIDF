@@ -58,12 +58,6 @@ namespace Briand {
 		/** Constructor, initialize resources */
 		BriandIDFSocketClient();
 
-		/** 
-		 * Constructor, initialize resources.
-		 * @param id an optional ID that will be added for debugging
-		*/
-		BriandIDFSocketClient(const int& id);
-
 		/** Destructor, if connected disconnects and releases all resources */
 		~BriandIDFSocketClient();
 
@@ -72,6 +66,12 @@ namespace Briand {
 		 * @param verbose if true prints to stdout
 		*/
 		virtual void SetVerbose(const bool& verbose);
+
+		/** 
+		 * Set an additional ID field, for debugging.
+		 * @param id an ID that will be added for debugging
+		*/
+		virtual void SetID(const int& id);
 
 		/**
 		 * Set timeout in seconds (default 30) for connect and for read/write (default 5 sec)
@@ -183,14 +183,14 @@ namespace Briand {
 		/** Constructor: initializes every resource (RNG, Entropy, context...) */
 		BriandIDFSocketTlsClient();
 
-		/**
-		 * Constructor, initialize resources.
-		 * @param id an optional ID that will be added for debugging
-		*/
-		BriandIDFSocketTlsClient(const int& id);
-
 		/** Destructor: every resource will be released (RNG, Entropy, context...) */
 		~BriandIDFSocketTlsClient();
+
+		/** 
+		 * Set an additional ID field, for debugging.
+		 * @param id an ID that will be added for debugging
+		*/
+		virtual void SetID(const int& id);
 
 		/**
 		 * Set timeout in seconds (default 30) for connect and for read/write (default 5 sec)
