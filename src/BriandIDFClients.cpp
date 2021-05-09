@@ -34,7 +34,8 @@ namespace Briand {
 		this->CLIENT_NAME = string("BriandIDFSocketClient");
 		this->CONNECTED = false;
 		this->VERBOSE = false;
-		this->TIMEOUT_S = 30;
+		this->CONNECT_TIMEOUT_S = 30;
+		this->IO_TIMEOUT_S = 5;
 		this->RECV_BUF_SIZE = 64;
 		this->_socket = -1;
 	}
@@ -47,8 +48,9 @@ namespace Briand {
 		this->VERBOSE = verbose;
 	}
 	
-	void BriandIDFSocketClient::SetTimeout(const unsigned short& seconds) {
-		this->TIMEOUT_S = seconds;
+	void BriandIDFSocketClient::SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s) {
+		this->CONNECT_TIMEOUT_S = connectTimeout_s;
+		this->IO_TIMEOUT_S = ioTimeout_s;
 	}
 
 	void BriandIDFSocketClient::SetReceivingBufferSize(const unsigned short& size) {
@@ -148,7 +150,7 @@ namespace Briand {
 
 		//Set timeout for socket
 		struct timeval receiving_timeout;
-		receiving_timeout.tv_sec = this->TIMEOUT_S;
+		receiving_timeout.tv_sec = this->IO_TIMEOUT_S;
 		receiving_timeout.tv_usec = 0;
 		if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
 			if (this->VERBOSE) printf("[%s] Error on setting socket timeout.\n", this->CLIENT_NAME.c_str());
@@ -175,7 +177,8 @@ namespace Briand {
 		int bytes_avail = 0;
 
 		if (this->CONNECTED)
-			ioctl(this->_socket, FIONREAD, &bytes_avail);
+			//ioctl(this->_socket, FIONREAD, &bytes_avail);
+			lwip_ioctl(this->_socket, FIONREAD, &bytes_avail);
 
 		return bytes_avail;
 	}
@@ -258,10 +261,11 @@ namespace Briand {
 		this->resourcesReady = false;
 	}
 
-	void BriandIDFSocketTlsClient::SetTimeout(const unsigned short& seconds) {
-		this->TIMEOUT_S = seconds;
+	void BriandIDFSocketTlsClient::SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s) {
+		this->CONNECT_TIMEOUT_S = connectTimeout_s;
+		this->IO_TIMEOUT_S = ioTimeout_s;
 		if (this->resourcesReady) {
-			mbedtls_ssl_conf_read_timeout(&this->conf, this->TIMEOUT_S*1000);
+			mbedtls_ssl_conf_read_timeout(&this->conf, this->IO_TIMEOUT_S*1000);
 		}
 	}
 
@@ -388,7 +392,8 @@ namespace Briand {
 		}
 
 		// Handshake timeout
-		// mbedtls_ssl_conf_handshake_timeout(&this->conf, 1000, this->TIMEOUT_S*1000);
+		// Not working, gives linker error!
+		// mbedtls_ssl_conf_handshake_timeout(&this->conf, 1000, this->CONNECT_TIMEOUT_S*1000);
 
 		// Set the security mode
 		if (this->caChainLoaded && !this->caChainFailed) {
@@ -426,8 +431,12 @@ namespace Briand {
 
 		if (this->VERBOSE) printf("[%s] SSL setup done.\n", this->CLIENT_NAME.c_str());
 
-		// Setup the functions that will be used for data read/write
-		mbedtls_ssl_set_bio(&this->ssl, &this->tls_socket, mbedtls_net_send, mbedtls_net_recv, NULL);
+		// Setup the functions that will be used for data read/write. 
+		// Added also timeout with mbedtls_net_recv_timeout
+		mbedtls_ssl_set_bio(&this->ssl, &this->tls_socket, mbedtls_net_send, mbedtls_net_recv, mbedtls_net_recv_timeout);
+
+		// Set timeout (works only with mbedtls_net_recv_timeout on BIO setup!)
+		mbedtls_ssl_conf_read_timeout(&this->conf, this->IO_TIMEOUT_S*1000);
 
 		if (this->VERBOSE) printf("[%s] Performing handshake.\n", this->CLIENT_NAME.c_str());
 
@@ -514,26 +523,12 @@ namespace Briand {
 
 		if (!this->CONNECTED) return std::move(data);
 
-		// Set timeout
-		// NOT WORKING!!
-		//mbedtls_ssl_conf_read_timeout(&this->conf, this->TIMEOUT_S*1000);
-
-		//Set timeout for socket
-		struct timeval receiving_timeout;
-		receiving_timeout.tv_sec = this->TIMEOUT_S;
-		receiving_timeout.tv_usec = 0;
-		if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
-			if (this->VERBOSE) printf("[%s] Error on setting socket timeout.\n", this->CLIENT_NAME.c_str());
-			this->Disconnect();
-			return std::move(data);
-		}
-
 		// Read until bytes received or jsut one chunk requested
 		int ret;
 		do {
 			auto recvBuffer = make_unique<unsigned char[]>(this->RECV_BUF_SIZE);
 			ret = mbedtls_ssl_read(&this->ssl, recvBuffer.get(), this->RECV_BUF_SIZE);
-
+			
 			if(ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 				// Wait
 				continue;
@@ -567,7 +562,7 @@ namespace Briand {
 	int BriandIDFSocketTlsClient::AvailableBytes() {
 		int bytes_avail = 0;
 
-		if (this->CONNECTED)
+		if (this->CONNECTED) 
 			bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
 
 		return bytes_avail;

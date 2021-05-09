@@ -48,7 +48,8 @@ namespace Briand {
 		string CLIENT_NAME;
 		bool VERBOSE;
 		bool CONNECTED;
-		unsigned short TIMEOUT_S;
+		unsigned short CONNECT_TIMEOUT_S;
+		unsigned short IO_TIMEOUT_S;
 		unsigned short RECV_BUF_SIZE;
 		int _socket;
 
@@ -64,10 +65,11 @@ namespace Briand {
 		virtual void SetVerbose(const bool& verbose);
 
 		/**
-		 * Set timeout in seconds (default 30)
-		 * @param timeout Timeout in seconds (default 30)
+		 * Set timeout in seconds (default 30) for connect and for read/write (default 5 sec)
+		 * @param connectTimeout_s Connection timeout in seconds (default 30)
+		 * @param ioTimeout_s Read/write timeout in seconds (default 5)
 		*/
-		virtual void SetTimeout(const unsigned short& seconds);
+		virtual void SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s);
 
 		/**
 		 * Set receiving buffer chunk size, in bytes. Default 64.
@@ -176,10 +178,11 @@ namespace Briand {
 		~BriandIDFSocketTlsClient();
 
 		/**
-		 * Set timeout in seconds (default 30)
-		 * @param timeout Timeout in seconds (default 30)
+		 * Set timeout in seconds (default 30) for connect and for read/write (default 5 sec)
+		 * @param connectTimeout_s Connection timeout in seconds (default 30)
+		 * @param ioTimeout_s Read/write timeout in seconds (default 5)
 		*/
-		virtual void SetTimeout(const unsigned short& seconds);
+		virtual void SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s);
 
 		/**
 		 * Set the minimum allowed RSA Key size (default 2048).
