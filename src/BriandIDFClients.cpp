@@ -52,8 +52,6 @@ namespace Briand {
 				receiving_timeout.tv_sec = this->IO_TIMEOUT_S;
 				receiving_timeout.tv_usec = 0;
 				
-				int enableFlag = 1;
-
 				// Set timeout for socket read
 				if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
 					if (this->VERBOSE) printf("[%s] Error on setting socket option read timeout.\n", this->CLIENT_NAME.c_str());
@@ -66,6 +64,7 @@ namespace Briand {
 			}
 
 			// Set always common good options
+			int enableFlag = 1;
 
 			// Enable Tcp no delay
 			if (setsockopt(this->_socket, IPPROTO_TCP, TCP_NODELAY, &enableFlag, sizeof(enableFlag)) < 0) {
