@@ -53,6 +53,11 @@ namespace Briand {
 		unsigned short RECV_BUF_SIZE;
 		int _socket;
 
+		/**
+		 * Method set default socket options (timeout, keepalive...)
+		*/
+		virtual void SetDefaultSocketOptions();
+
 		public:
 
 		/** Constructor, initialize resources */
@@ -171,6 +176,11 @@ namespace Briand {
 		bool caChainFailed;
 		/** Flag */
 		bool resourcesReady;
+
+		/**
+		 * Method set default socket options (timeout, keepalive...)
+		*/
+		virtual void SetDefaultSocketOptions();
 
 		/** Free any resource (RNG, Entropy, context...) */
 		virtual void ReleaseResources();

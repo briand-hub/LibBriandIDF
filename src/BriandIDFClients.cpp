@@ -44,6 +44,41 @@ namespace Briand {
 		if (this->CONNECTED) this->Disconnect();
 	}
 
+	void BriandIDFSocketClient::SetDefaultSocketOptions() {
+		if (this->CONNECTED) {
+			// Set read and write timeout if requested
+			if (this->IO_TIMEOUT_S > 0) {
+				struct timeval receiving_timeout;
+				receiving_timeout.tv_sec = this->IO_TIMEOUT_S;
+				receiving_timeout.tv_usec = 0;
+				
+				int enableFlag = 1;
+
+				// Set timeout for socket read
+				if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
+					if (this->VERBOSE) printf("[%s] Error on setting socket option read timeout.\n", this->CLIENT_NAME.c_str());
+				}
+
+				// Set timeout for socket write
+				if (setsockopt(this->_socket, SOL_SOCKET, SO_SNDTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
+					if (this->VERBOSE) printf("[%s] Error on setting socket option write timeout.\n", this->CLIENT_NAME.c_str());
+				}
+			}
+
+			// Set always common good options
+
+			// Enable Tcp no delay
+			if (setsockopt(this->_socket, IPPROTO_TCP, TCP_NODELAY, &enableFlag, sizeof(enableFlag)) < 0) {
+				if (this->VERBOSE) printf("[%s] Error on setting socket option tcp no delay.\n", this->CLIENT_NAME.c_str());
+			}
+
+			// Enable Keep-Alive
+			if (setsockopt(this->_socket, SOL_SOCKET, SO_KEEPALIVE, &enableFlag, sizeof(enableFlag)) < 0) {
+				if (this->VERBOSE) printf("[%s] Error on setting socket option keep-alive.\n", this->CLIENT_NAME.c_str());
+			}
+		}
+	}
+
 	void BriandIDFSocketClient::SetVerbose(const bool& verbose) {
 		this->VERBOSE = verbose;
 	}
@@ -84,6 +119,12 @@ namespace Briand {
 
 		if (this->VERBOSE) printf("[%s] Socket connected.\n", this->CLIENT_NAME.c_str());
 
+		// Now connected!
+		this->CONNECTED = true;
+
+		// Set socket options
+		this->SetDefaultSocketOptions();
+
 		return true;
 	}
 
@@ -115,9 +156,6 @@ namespace Briand {
 
 		// Free resources
 		freeaddrinfo(res);
-
-		// Save status
-		this->CONNECTED = connected;
 
 		return connected;
 	}
@@ -151,18 +189,6 @@ namespace Briand {
 		auto data = make_unique<vector<unsigned char>>();
 
 		if (!this->CONNECTED) return std::move(data);
-
-		if (this->IO_TIMEOUT_S > 0) {
-			//Set timeout for socket
-			struct timeval receiving_timeout;
-			receiving_timeout.tv_sec = this->IO_TIMEOUT_S;
-			receiving_timeout.tv_usec = 0;
-			if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
-				if (this->VERBOSE) printf("[%s] Error on setting socket timeout.\n", this->CLIENT_NAME.c_str());
-				this->Disconnect();
-				return std::move(data);
-			}
-		}
 
 		// Read until bytes received or just one chunk requested
 		int receivedBytes;
@@ -274,9 +300,11 @@ namespace Briand {
 	void BriandIDFSocketTlsClient::SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s) {
 		this->CONNECT_TIMEOUT_S = connectTimeout_s;
 		this->IO_TIMEOUT_S = ioTimeout_s;
-		if (this->resourcesReady && this-IO_TIMEOUT_S > 0) {
-			mbedtls_ssl_conf_read_timeout(&this->conf, this->IO_TIMEOUT_S*1000);
-		}
+
+		// Better implementation with SetDefaultSocketOptions()
+		// if (this->resourcesReady && this-IO_TIMEOUT_S > 0) {
+		// 	mbedtls_ssl_conf_read_timeout(&this->conf, this->IO_TIMEOUT_S*1000);
+		// }
 	}
 
 	void BriandIDFSocketTlsClient::SetMinRsaKeySize(const unsigned short& keySize) {
@@ -487,10 +515,17 @@ namespace Briand {
 		}
 
 		if (this->VERBOSE) printf("[%s] SSL connection ready.\n", this->CLIENT_NAME.c_str());
+
 		this->CONNECTED = true;
 
 		// Save underlying socket if needed
 		this->_socket = this->tls_socket.fd;
+
+		// Now connected!
+		this->CONNECTED = true;
+
+		// Set socket options
+		this->SetDefaultSocketOptions();
 
 		return true;
 	}
