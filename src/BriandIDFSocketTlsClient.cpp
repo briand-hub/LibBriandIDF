@@ -36,7 +36,7 @@ namespace Briand {
 		this->ReleaseResources();
 	}
 
-	void BriandIDFSocketClient::SetDefaultSocketOptions() {
+	void BriandIDFSocketTlsClient::SetDefaultSocketOptions() {
 		if (this->CONNECTED) {
 			// Set read and write timeout if requested
 			if (this->IO_TIMEOUT_S > 0) {
