@@ -36,6 +36,40 @@ namespace Briand {
 		this->ReleaseResources();
 	}
 
+	void BriandIDFSocketClient::SetDefaultSocketOptions() {
+		if (this->CONNECTED) {
+			// Set read and write timeout if requested
+			if (this->IO_TIMEOUT_S > 0) {
+				struct timeval receiving_timeout;
+				receiving_timeout.tv_sec = this->IO_TIMEOUT_S;
+				receiving_timeout.tv_usec = 0;
+				
+				// Set timeout for socket read
+				if (setsockopt(this->_socket, SOL_SOCKET, SO_RCVTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
+					if (this->VERBOSE) printf("[%s] Error on setting socket option read timeout.\n", this->CLIENT_NAME.c_str());
+				}
+
+				// Set timeout for socket write
+				if (setsockopt(this->_socket, SOL_SOCKET, SO_SNDTIMEO, &receiving_timeout, sizeof(receiving_timeout)) < 0) {
+					if (this->VERBOSE) printf("[%s] Error on setting socket option write timeout.\n", this->CLIENT_NAME.c_str());
+				}
+			}
+
+			// Set always common good options
+			int enableFlag = 1;
+
+			// Enable Tcp no delay
+			if (setsockopt(this->_socket, IPPROTO_TCP, TCP_NODELAY, &enableFlag, sizeof(enableFlag)) < 0) {
+				if (this->VERBOSE) printf("[%s] Error on setting socket option tcp no delay.\n", this->CLIENT_NAME.c_str());
+			}
+
+			// Enable Keep-Alive
+			if (setsockopt(this->_socket, SOL_SOCKET, SO_KEEPALIVE, &enableFlag, sizeof(enableFlag)) < 0) {
+				if (this->VERBOSE) printf("[%s] Error on setting socket option keep-alive.\n", this->CLIENT_NAME.c_str());
+			}
+		}
+	}
+
 	void BriandIDFSocketTlsClient::SetID(const int& id) {
 		this->CLIENT_NAME = "BriandIDFSocketTlsClient#" + std::to_string(id);
 	}
@@ -412,4 +446,5 @@ namespace Briand {
 
 		return bytes_avail;
 	}
+
 }
