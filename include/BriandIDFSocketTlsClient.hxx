@@ -85,7 +85,7 @@ namespace Briand {
 		BriandIDFSocketTlsClient();
 
 		/** Destructor: every resource will be released (RNG, Entropy, context...) */
-		~BriandIDFSocketTlsClient();
+		virtual ~BriandIDFSocketTlsClient();
 
 		/** 
 		 * Set an additional ID field, for debugging.

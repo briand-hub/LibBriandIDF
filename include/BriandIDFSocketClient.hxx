@@ -53,7 +53,7 @@ namespace Briand {
 		BriandIDFSocketClient();
 
 		/** Destructor, if connected disconnects and releases all resources */
-		~BriandIDFSocketClient();
+		virtual ~BriandIDFSocketClient();
 
 		/**
 		 * Set verbosity (disabled by default)
