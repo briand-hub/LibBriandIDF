@@ -377,6 +377,11 @@ namespace Briand {
 		// Error management
 		int ret;
 
+		// Poll the connection for writing
+		if (this->VERBOSE) printf("[%s] Polling for write\n", this->CLIENT_NAME.c_str()); 
+		ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_WRITE, this->IO_TIMEOUT_S);
+		if (this->VERBOSE) printf("[%s] Poll result: %d\n", this->CLIENT_NAME.c_str(), ret);
+
 		do {
 			ret = mbedtls_ssl_write(&this->ssl, data->data(), data->size());
 
@@ -402,8 +407,15 @@ namespace Briand {
 
 		if (!this->CONNECTED) return std::move(data);
 
-		// Read until bytes received or jsut one chunk requested
+		// Error management
 		int ret;
+
+		// Poll the connection for reading
+		if (this->VERBOSE) printf("[%s] Polling for read\n", this->CLIENT_NAME.c_str()); 
+		ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_READ, this->IO_TIMEOUT_S);
+		if (this->VERBOSE) printf("[%s] Poll result: %d\n", this->CLIENT_NAME.c_str(), ret);
+
+		// Read until bytes received or jsut one chunk requested
 		do {
 			auto recvBuffer = make_unique<unsigned char[]>(this->RECV_BUF_SIZE);
 			ret = mbedtls_ssl_read(&this->ssl, recvBuffer.get(), this->RECV_BUF_SIZE);

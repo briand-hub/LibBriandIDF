@@ -205,5 +205,9 @@ namespace Briand {
 
 		return bytes_avail;
 	}
+
+	int BriandIDFSocketClient::GetSocketDescriptor() {
+		return this->_socket;
+	}
 	
 }

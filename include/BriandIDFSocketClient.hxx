@@ -127,5 +127,11 @@ namespace Briand {
 		*/
 		virtual int AvailableBytes();
 
+		/**
+		 * Return the internal socket file descriptor
+		 * @return internal socket fd
+		*/
+		virtual int GetSocketDescriptor();
+
 	};
 }
