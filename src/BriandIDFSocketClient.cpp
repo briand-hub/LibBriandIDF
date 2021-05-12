@@ -181,6 +181,20 @@ namespace Briand {
 
 		if (!this->CONNECTED) return std::move(data);
 
+		// Error management
+		int ret;
+
+		// Poll the connection for reading
+		if (this->VERBOSE) printf("[%s] Polling for read\n", this->CLIENT_NAME.c_str()); 
+		// gives linker undefined reference error
+		//ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_READ, this->IO_TIMEOUT_S*1000);
+		pollfd fds;
+		memset(&fds, 0, sizeof(fds));
+		fds.fd = this->_socket;
+		fds.events = POLLRDNORM;
+		ret = poll(&fds, 1, this->poll_timeout_s*1000);
+		if (this->VERBOSE) printf("[%s] Poll result: %d flags: %d Bytes avail: %d\n", this->CLIENT_NAME.c_str(), ret, fds.revents, this->AvailableBytes());
+
 		// Read until bytes received or just one chunk requested
 		int receivedBytes;
 		do {
@@ -199,10 +213,13 @@ namespace Briand {
 	int BriandIDFSocketClient::AvailableBytes() {
 		int bytes_avail = 0;
 
-		if (this->CONNECTED)
-			//ioctl(this->_socket, FIONREAD, &bytes_avail);
-			lwip_ioctl(this->_socket, FIONREAD, &bytes_avail);
+		if (this->CONNECTED) {
+			// Call a read without buffer (does not download data)
+			read(this->_socket, NULL, 0);
+			ioctl(this->_socket, FIONREAD, &bytes_avail);
 
+		}
+			
 		return bytes_avail;
 	}
 

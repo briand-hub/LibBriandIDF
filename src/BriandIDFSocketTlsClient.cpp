@@ -410,22 +410,30 @@ namespace Briand {
 		// Error management
 		int ret;
 
-		// Poll the connection for reading
-		if (this->VERBOSE) printf("[%s] Polling for read\n", this->CLIENT_NAME.c_str()); 
-		ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_READ, this->IO_TIMEOUT_S);
-		if (this->VERBOSE) printf("[%s] Poll result: %d\n", this->CLIENT_NAME.c_str(), ret);
+		// Poll the connection for reading - NOT SOLVING PROBLEM
+		//if (this->VERBOSE) printf("[%s] Polling for read\n", this->CLIENT_NAME.c_str()); 
+		// gives linker undefined reference error
+		//ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_READ, this->IO_TIMEOUT_S*1000);
+
+		// polling not solving problem for long delays
+		// pollfd fds;
+		// memset(&fds, 0, sizeof(fds));
+		// fds.fd = this->_socket;
+		// fds.events = POLLRDNORM;
+		// poll(&fds, 1, this->poll_timeout_s*1000);
+		// if (this->VERBOSE) printf("[%s] Poll result: %d flags: %d Bytes avail: %d\n", this->CLIENT_NAME.c_str(), ret, fds.revents, this->AvailableBytes());
 
 		// Read until bytes received or jsut one chunk requested
 		do {
 			auto recvBuffer = make_unique<unsigned char[]>(this->RECV_BUF_SIZE);
 			ret = mbedtls_ssl_read(&this->ssl, recvBuffer.get(), this->RECV_BUF_SIZE);
 			
-			if(ret == MBEDTLS_ERR_SSL_WANT_READ || ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+			if(ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 				// Wait
 				continue;
 			}
-			else if(ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY) {
-				// Finish
+			else if(ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || ret == MBEDTLS_ERR_SSL_WANT_READ) {
+				// Finish because server wants to close or pass to the read (has finished writing us)
 				break;
 			}
 			else if (ret < 0) {
@@ -453,9 +461,12 @@ namespace Briand {
 	int BriandIDFSocketTlsClient::AvailableBytes() {
 		int bytes_avail = 0;
 
-		if (this->CONNECTED) 
+		if (this->CONNECTED) {
+			// Call a read without buffer (does not download data)
+			mbedtls_ssl_read(&this->ssl, NULL, 0);
 			bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
-
+		}
+		
 		return bytes_avail;
 	}
 

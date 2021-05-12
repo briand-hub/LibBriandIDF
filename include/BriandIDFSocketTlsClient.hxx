@@ -41,6 +41,7 @@ namespace Briand {
 	/** This class is a simple socket client over TLS (uses mbedtls library) */
 	class BriandIDFSocketTlsClient : public BriandIDFSocketClient {
 		private:
+		
 		protected:
 
 		/** Error buffer size */
@@ -154,7 +155,7 @@ namespace Briand {
 		virtual unique_ptr<vector<unsigned char>> ReadData(bool oneChunk = false);
 
 		/**
-		 * Return number of available bytes that could be read WORKS AFTER CALLING FIRST ReadData()
+		 * Return number of available bytes that could be read
 		 * @return number of waiting bytes
 		*/
 		virtual int AvailableBytes();

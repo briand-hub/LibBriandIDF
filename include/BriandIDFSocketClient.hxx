@@ -32,15 +32,25 @@ namespace Briand {
 	/** This class is a simple socket client (not SSL) */
 	class BriandIDFSocketClient {
 		private:
+
 		protected:
 		
+		/* Client name for debugging */
 		string CLIENT_NAME;
+		/* Flag */
 		bool VERBOSE;
+		/* Flag */
 		bool CONNECTED;
+		/* Connection timeout */
 		unsigned short CONNECT_TIMEOUT_S;
+		/* Read/write timeout */
 		unsigned short IO_TIMEOUT_S;
+		/* Internal buffer size for read operation */
 		unsigned short RECV_BUF_SIZE;
+		/* Internal socket */
 		int _socket;
+		/* Poll operations timeout in seconds (default: 1 second) */
+		const unsigned char poll_timeout_s = 1;
 
 		/**
 		 * Method set default socket options (timeout, keepalive...)
@@ -122,7 +132,7 @@ namespace Briand {
 		virtual unique_ptr<vector<unsigned char>> ReadData(bool oneChunk = false);
 
 		/**
-		 * Return number of available bytes that could be read. WORKS AFTER CALLING FIRST ReadData()
+		 * Return number of available bytes that could be read. 
 		 * @return number of waiting bytes
 		*/
 		virtual int AvailableBytes();
