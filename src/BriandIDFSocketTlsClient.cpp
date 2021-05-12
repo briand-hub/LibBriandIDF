@@ -377,10 +377,11 @@ namespace Briand {
 		// Error management
 		int ret;
 
-		// Poll the connection for writing
-		if (this->VERBOSE) printf("[%s] Polling for write\n", this->CLIENT_NAME.c_str()); 
-		ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_WRITE, this->IO_TIMEOUT_S);
-		if (this->VERBOSE) printf("[%s] Poll result: %d\n", this->CLIENT_NAME.c_str(), ret);
+		// Poll the connection for writing (NOT NECESSARY)
+		// if (this->VERBOSE) printf("[%s] Polling for write\n", this->CLIENT_NAME.c_str()); 
+		// Linker error: undefined reference to `mbedtls_net_poll' see ReadData() for details/implementation
+		// ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_WRITE, this->IO_TIMEOUT_S);
+		// if (this->VERBOSE) printf("[%s] Poll result: %d\n", this->CLIENT_NAME.c_str(), ret);
 
 		do {
 			ret = mbedtls_ssl_write(&this->ssl, data->data(), data->size());
@@ -425,8 +426,17 @@ namespace Briand {
 
 		// Read until bytes received or jsut one chunk requested
 		do {
-			auto recvBuffer = make_unique<unsigned char[]>(this->RECV_BUF_SIZE);
-			ret = mbedtls_ssl_read(&this->ssl, recvBuffer.get(), this->RECV_BUF_SIZE);
+			// The following seems to resolve the long delay. 
+			// The blocking request for always RECV_BUF_SIZE seems to keep socket blocked until exactly recv_buf_size at most is read.
+			int remainingBytes = this->AvailableBytes();
+			int READ_SIZE = this->RECV_BUF_SIZE;
+			if (remainingBytes > 0 && remainingBytes < READ_SIZE)
+				READ_SIZE = remainingBytes;
+
+			auto recvBuffer = make_unique<unsigned char[]>(READ_SIZE);
+			ret = mbedtls_ssl_read(&this->ssl, recvBuffer.get(), READ_SIZE);
+
+			// DEBUG if (this->VERBOSE) printf("[%s] Called ret = %d size to read=%d\n", this->CLIENT_NAME.c_str(), ret, READ_SIZE); 
 			
 			if(ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
 				// Wait
@@ -450,6 +460,10 @@ namespace Briand {
 			// if ret is zero is EOF
 			// if > 0 then bytes!
 			if (ret > 0) data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + ret);
+
+			// Check if the remainingBytes were less  than or equal the receiving buffer size. If so, we finished.
+			if (remainingBytes <= this->RECV_BUF_SIZE)
+				break;
 
 		} while(ret != 0 && !oneChunk);
 

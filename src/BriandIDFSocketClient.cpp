@@ -185,24 +185,39 @@ namespace Briand {
 		int ret;
 
 		// Poll the connection for reading
-		if (this->VERBOSE) printf("[%s] Polling for read\n", this->CLIENT_NAME.c_str()); 
+		// if (this->VERBOSE) printf("[%s] Polling for read\n", this->CLIENT_NAME.c_str()); 
 		// gives linker undefined reference error
-		//ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_READ, this->IO_TIMEOUT_S*1000);
-		pollfd fds;
-		memset(&fds, 0, sizeof(fds));
-		fds.fd = this->_socket;
-		fds.events = POLLRDNORM;
-		ret = poll(&fds, 1, this->poll_timeout_s*1000);
-		if (this->VERBOSE) printf("[%s] Poll result: %d flags: %d Bytes avail: %d\n", this->CLIENT_NAME.c_str(), ret, fds.revents, this->AvailableBytes());
+		// ret = mbedtls_net_poll(&this->tls_socket, MBEDTLS_NET_POLL_READ, this->IO_TIMEOUT_S*1000);
+		// polling not solving problem for long delays
+		// pollfd fds;
+		// memset(&fds, 0, sizeof(fds));
+		// fds.fd = this->_socket;
+		// fds.events = POLLRDNORM;
+		// ret = poll(&fds, 1, this->poll_timeout_s*1000);
+		// if (this->VERBOSE) printf("[%s] Poll result: %d flags: %d Bytes avail: %d\n", this->CLIENT_NAME.c_str(), ret, fds.revents, this->AvailableBytes());
 
 		// Read until bytes received or just one chunk requested
 		int receivedBytes;
 		do {
-			auto recvBuffer = make_unique<unsigned char[]>(this->RECV_BUF_SIZE);
+			// The following seems to resolve the long delay. 
+			// The blocking request for always RECV_BUF_SIZE seems to keep socket blocked until exactly recv_buf_size at most is read.
+			int remainingBytes = this->AvailableBytes();
+			int READ_SIZE = this->RECV_BUF_SIZE;
+			if (remainingBytes > 0 && remainingBytes < READ_SIZE)
+				READ_SIZE = remainingBytes;
+
+			auto recvBuffer = make_unique<unsigned char[]>(READ_SIZE);
+
 			receivedBytes = read(this->_socket, recvBuffer.get(), RECV_BUF_SIZE);
+
 			if (receivedBytes > 0) {
 				data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + receivedBytes);
 			}
+
+			// Check if the remainingBytes were less  than or equal the receiving buffer size. If so, we finished.
+			if (remainingBytes <= this->RECV_BUF_SIZE)
+				break;
+
 		} while(receivedBytes > 0 && !oneChunk);
 
 		if (this->VERBOSE) printf("[%s] Received %d bytes. %s\n", this->CLIENT_NAME.c_str(), data->size(), ((this->AvailableBytes() > 0) ? "More bytes are available." : "No more bytes available."));
