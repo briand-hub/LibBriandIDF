@@ -182,7 +182,7 @@ namespace Briand {
 		if (!this->CONNECTED) return std::move(data);
 
 		// Error management
-		int ret;
+		//int ret;
 
 		// Poll the connection for reading
 		// if (this->VERBOSE) printf("[%s] Polling for read\n", this->CLIENT_NAME.c_str()); 
