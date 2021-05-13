@@ -215,7 +215,7 @@ namespace Briand {
 			}
 
 			// Check if the remainingBytes were less  than or equal the receiving buffer size. If so, we finished.
-			if (remainingBytes <= this->RECV_BUF_SIZE)
+			if (remainingBytes > 0 && remainingBytes <= this->RECV_BUF_SIZE)
 				break;
 
 		} while(receivedBytes > 0 && !oneChunk);
@@ -230,9 +230,9 @@ namespace Briand {
 
 		if (this->CONNECTED) {
 			// Call a read without buffer (does not download data)
-			read(this->_socket, NULL, 0);
+			char temp;
+			read(this->_socket, &temp, 0);
 			ioctl(this->_socket, FIONREAD, &bytes_avail);
-
 		}
 			
 		return bytes_avail;
