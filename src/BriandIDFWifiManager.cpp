@@ -21,9 +21,17 @@
 #include <iomanip>
 #include <string.h>
 
-#include <esp_wifi.h>
-#include <esp_netif.h>
-#include <esp_log.h>
+/* Framework libraries */
+#if defined(ESP_PLATFORM)
+	#include <esp_wifi.h>
+	#include <esp_netif.h>
+	#include <esp_log.h>
+#elif defined(__linux__)
+	#include "BriandEspLinuxPorting.hxx"
+	#include <mbedtls/ssl.h>
+#else 
+	#error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
+#endif
 
 using namespace std;
 
@@ -303,6 +311,9 @@ namespace Briand {
 
 		esp_event_handler_instance_t got_ip_event;
 
+/* LINUX PORTING REQUIRES LITTLE MOD HERE */
+#if defined(ESP_PLATFORM)
+
 		// Pass this object as argument to event manager
 		esp_event_handler_instance_register(IP_EVENT, IP_EVENT_STA_GOT_IP, &BriandIDFWifiManager::WiFiEventHandler, this, &got_ip_event);
 
@@ -311,6 +322,13 @@ namespace Briand {
 		this->STA_IF_READY = false;
 		// Pass this object as argument to event manager
 		esp_event_handler_instance_register(WIFI_EVENT, WIFI_EVENT_STA_START, &BriandIDFWifiManager::WiFiEventHandler, this, &if_ready_change_hostname_event);
+
+#elif defined(__linux__)
+
+		this->STA_IF_READY = true;
+		this->STA_CONNECTED = true;
+
+#endif
 
 		// Always stop & restart
 		err = esp_wifi_start();		
@@ -334,8 +352,13 @@ namespace Briand {
 			this->SetHostname(ovverrideHostname);
 		}
 
+/* LINUX PORTING REQUIRES LITTLE MOD HERE */
+#if defined(ESP_PLATFORM)
+
 		// Delete the associated event
 		esp_event_handler_instance_unregister(WIFI_EVENT, WIFI_EVENT_WIFI_READY, &if_ready_change_hostname_event);
+
+#endif
 
 		time(&timeout);
 		time(&now);
@@ -356,8 +379,13 @@ namespace Briand {
 			return false;
 		}
 
+/* LINUX PORTING REQUIRES LITTLE MOD HERE */
+#if defined(ESP_PLATFORM)
+
 		// Delete the associated event
 		esp_event_handler_instance_unregister(IP_EVENT, IP_EVENT_STA_GOT_IP, &got_ip_event);
+
+#endif
 
 		// Get IP info
 		esp_netif_ip_info_t ipInfo;

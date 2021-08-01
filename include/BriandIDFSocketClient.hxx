@@ -20,10 +20,17 @@
 #include <vector>
 
 // Sockets
-#include <lwip/sys.h>
-#include <lwip/dns.h>
-#include <lwip/sockets.h>
-#include <lwip/netdb.h>
+#if defined(ESP_PLATFORM)
+    #include <lwip/sys.h>
+	#include <lwip/dns.h>
+	#include <lwip/sockets.h>
+	#include <lwip/netdb.h>
+#elif defined(__linux__)
+	#include <sys/socket.h>
+	#include "BriandEspLinuxPorting.hxx"
+#else
+    #error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
+#endif
 
 using namespace std;
 

@@ -18,13 +18,19 @@
 #include <iostream>
 #include <memory>
 
-#include <sdkconfig.h>
-#include <esp_heap_caps.h>
-#include <esp32/spiram.h>
-#include <esp32/himem.h>
-#include <hal/cpu_hal.h>
-#include <soc/rtc.h>
-#include <soc/soc.h>
+#if defined(ESP_PLATFORM)
+    #include <sdkconfig.h>
+    #include <esp_heap_caps.h>
+    #include <esp32/spiram.h>
+    #include <esp32/himem.h>
+    #include <hal/cpu_hal.h>
+    #include <soc/rtc.h>
+    #include <soc/soc.h>
+#elif defined(__linux__)
+    #include "BriandEspLinuxPorting.hxx"
+#else
+    #error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
+#endif
 
 using namespace std;
 

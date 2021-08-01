@@ -20,10 +20,18 @@
 #include <vector>
 
 // Sockets
-#include <lwip/sys.h>
-#include <lwip/dns.h>
-#include <lwip/sockets.h>
-#include <lwip/netdb.h>
+#if defined(ESP_PLATFORM)
+    #include <lwip/sys.h>
+	#include <lwip/dns.h>
+	#include <lwip/sockets.h>
+	#include <lwip/netdb.h>
+#elif defined(__linux__)
+	#include "BriandEspLinuxPorting.hxx"
+	#include <sys/socket.h>
+#else
+    #error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
+#endif
+
 
 // TLS/SSL with mbedtls
 #include <mbedtls/entropy.h>

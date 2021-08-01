@@ -2,6 +2,20 @@
 
 C++17 Utility library for ESP32 IDF Framework. Built with PlatformIO and IDF v4.2 (latest stable).
 
+## NEW RELEASE WITH LINUX PORTING
+
+A new release (1.1) has a Makefile and could be compiled under Linux environment for any testing.
+
+Required libraries: mbedtls and libsodium (ESP32/IDF defaults). Could be installed with (Debian):
+
+```bash
+sudo apt-get install libsodium-dev libmbedtls-dev
+```
+
+**See Makefile and header/cpp files BriandEspLinuxPorting for more details**
+
+*WARNING*: the IDF porting is not **full** but will be added with functions needed for other projects. 
+
 ## Install
 
 In your platformio.ini file add:

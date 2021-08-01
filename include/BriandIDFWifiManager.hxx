@@ -19,7 +19,13 @@
 #include <memory>
 
 // Esp specific
-#include <esp_wifi.h>
+#if defined(ESP_PLATFORM)
+    #include <esp_wifi.h>
+#elif defined(__linux__)
+	#include "BriandEspLinuxPorting.hxx"
+#else
+    #error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
+#endif
 
 using namespace std;
 
