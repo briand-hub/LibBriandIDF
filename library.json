@@ -1,7 +1,7 @@
 {
 	"name": "LibBriandIDF",
-	"version": "1.0.1",
-	"description": "C++17 Utility library for ESP32 IDF Framework.",
+	"version": "1.1",
+	"description": "C++17 Utility library for ESP32 IDF Framework. Contains porting IDF to Linux since v1.1",
   	"keywords": "idf, esp32, espressif, mbedtls",
 	"repository":
 	{
