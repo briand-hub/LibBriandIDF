@@ -9,12 +9,63 @@ A new release (1.1) has a Makefile and could be compiled under Linux environment
 Required libraries: mbedtls and libsodium (ESP32/IDF defaults). Could be installed with (Debian):
 
 ```bash
-sudo apt-get install libsodium-dev libmbedtls-dev
+$ sudo apt-get install libsodium-dev libmbedtls-dev
 ```
 
 **See Makefile and header/cpp files BriandEspLinuxPorting for more details**
 
 *WARNING*: the IDF porting is not **full** but will be added with functions needed for other projects. 
+
+To test under linux first build a main.cpp file, for example:
+
+```C
+
+/* Framework libraries */
+#if defined(ESP_PLATFORM)
+	#include <freertos/FreeRTOS.h>
+	#include <freertos/task.h>
+	#include <esp_system.h>
+	#include <esp_wifi.h>
+	#include <esp_event.h>
+	#include <esp_log.h>
+	#include <esp_int_wdt.h>
+	#include <esp_task_wdt.h>
+	#include <nvs_flash.h>
+	#include <esp_tls.h>
+#elif defined(__linux__)
+	/* any linux header here */
+#else 
+	#error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
+#endif
+
+/* LIB TESTING */
+#include "BriandESPDevice.hxx"
+#include "BriandIDFWifiManager.hxx"
+#include "BriandIDFSocketClient.hxx"
+#include "BriandIDFSocketTlsClient.hxx"
+
+using namespace std;
+
+// Required for C++ use WITH IDF!
+extern "C" {
+	void app_main();
+}
+
+void app_main() {
+	printf("HELLO WORLD FROM IDF PORTING\n");
+}
+
+```
+
+Then call make:
+
+```bash
+$ cd path_to_clone
+$ make
+$ ./main_linux_exe
+```
+
+Hit *Ctrl-C* to kill program as it uses infinite loop threads.
 
 ## Install
 
