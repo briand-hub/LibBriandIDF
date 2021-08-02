@@ -218,7 +218,7 @@
 		t.detach(); // this will create daemon-like threads
 	}
 
-	void xTaskDelete(TaskHandle_t handle) {
+	void vTaskDelete(TaskHandle_t handle) {
 		std::thread::id idToKill;
 		if (handle == NULL) {
 			// Terminate this
