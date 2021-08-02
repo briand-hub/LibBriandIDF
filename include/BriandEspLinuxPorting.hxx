@@ -168,9 +168,9 @@
 		} gpio_mode_t;
 
 		#define esp_restart() { printf("\n\n***** esp_restart() SYSTEM REBOOT. Hit Ctrl-C to restart main program.*****\n\n"); }
-        #define gpio_set_level(n, l) { printf("***** GPIO %d => Level = %d*****", n, l); }
+        #define gpio_set_level(n, l) { printf("\n\n***** GPIO %d => Level = %d*****\n\n", n, l); }
 		#define gpio_get_level(n) GPIO_MODE_DISABLE
-        #define gpio_set_direction(n, d) { printf("***** GPIO %d => Direction = %d*****", n, d); }
+        #define gpio_set_direction(n, d) { printf("\n\n***** GPIO %d => Direction = %d*****\n\n", n, d); }
 
 
 		// ERROR AND LOG FUNCTION
