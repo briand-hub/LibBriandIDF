@@ -210,10 +210,15 @@
 	{
 		// do not worry for prioriry and task depth now...
 
-		std::thread t (pvTaskCode, pvParameters);
-		
+		std::thread t(pvTaskCode, pvParameters);
+		TaskHandle_t tHandle = new BriandIDFPortingTaskHandle(t.native_handle(), pcName, t.get_id());
+
+		if (pvCreatedTask != NULL) {
+			*pvCreatedTask = tHandle;
+		}
+
 		// Add the task to pool BEFORE detach() otherwise native id is lost
-		BRIAND_TASK_POOL->push_back( new BriandIDFPortingTaskHandle(t.native_handle(), pcName, t.get_id() ));
+		BRIAND_TASK_POOL->push_back( tHandle );
 
 		t.detach(); // this will create daemon-like threads
 	}
@@ -264,10 +269,11 @@
 			// Check if any instanced thread should be terminated
 			for (int i=0; i<BRIAND_TASK_POOL->size(); i++) {
 				if (BRIAND_TASK_POOL->at(i)->toBeKilled) {
+					string tname = BRIAND_TASK_POOL->at(i)->name;
 					pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
 					delete BRIAND_TASK_POOL->at(i);
 					BRIAND_TASK_POOL->erase(BRIAND_TASK_POOL->begin() + i);
-					cout << "Thread #" << i << " killed" << endl;
+					cout << "Thread #" << i << "(" << tname << ") killed" << endl;
 				}
 			}
 				
