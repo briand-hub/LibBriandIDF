@@ -166,6 +166,11 @@ namespace Briand {
 	bool BriandIDFSocketClient::WriteData(const unique_ptr<vector<unsigned char>>& data) {
 		if (!this->CONNECTED) return false;
 
+		if (data == nullptr || data->size() == 0) {
+			if (this->VERBOSE) printf("[%s] WriteData: no bytes! (nullptr or zero size!).\n", this->CLIENT_NAME.c_str());
+			return false;
+		}
+
 		if (write(this->_socket, data->data(), data->size()) < 0) {
 			if (this->VERBOSE) printf("[%s] Error on write.\n", this->CLIENT_NAME.c_str());
 			return false;
@@ -197,18 +202,18 @@ namespace Briand {
 		// if (this->VERBOSE) printf("[%s] Poll result: %d flags: %d Bytes avail: %d\n", this->CLIENT_NAME.c_str(), ret, fds.revents, this->AvailableBytes());
 
 		// Read until bytes received or just one chunk requested
-		int receivedBytes;
+		size_t receivedBytes;
 		do {
 			// The following seems to resolve the long delay. 
 			// The blocking request for always RECV_BUF_SIZE seems to keep socket blocked until exactly recv_buf_size at most is read.
-			int remainingBytes = this->AvailableBytes();
+			size_t remainingBytes = this->AvailableBytes();
 			int READ_SIZE = this->RECV_BUF_SIZE;
 			if (remainingBytes > 0 && remainingBytes < READ_SIZE)
 				READ_SIZE = remainingBytes;
 
 			auto recvBuffer = make_unique<unsigned char[]>(READ_SIZE);
 
-			receivedBytes = read(this->_socket, recvBuffer.get(), RECV_BUF_SIZE);
+			receivedBytes = read(this->_socket, recvBuffer.get(), READ_SIZE);
 
 			if (receivedBytes > 0) {
 				data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + receivedBytes);
@@ -225,8 +230,8 @@ namespace Briand {
 		return std::move(data);
 	}
 
-	int BriandIDFSocketClient::AvailableBytes() {
-		int bytes_avail = 0;
+	size_t BriandIDFSocketClient::AvailableBytes() {
+		size_t bytes_avail = 0;
 
 		if (this->CONNECTED) {
 			// Call a read without buffer (does not download data)

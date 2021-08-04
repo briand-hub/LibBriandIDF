@@ -377,6 +377,11 @@ namespace Briand {
 		// Error management
 		int ret;
 
+		if (data == nullptr || data->size() == 0) {
+			if (this->VERBOSE) printf("[%s] WriteData: no bytes! (nullptr or zero size!).\n", this->CLIENT_NAME.c_str());
+			return false;
+		}
+
 		// Poll the connection for writing (NOT NECESSARY)
 		// if (this->VERBOSE) printf("[%s] Polling for write\n", this->CLIENT_NAME.c_str()); 
 		// Linker error: undefined reference to `mbedtls_net_poll' see ReadData() for details/implementation
@@ -428,7 +433,7 @@ namespace Briand {
 		do {
 			// The following seems to resolve the long delay. 
 			// The blocking request for always RECV_BUF_SIZE seems to keep socket blocked until exactly recv_buf_size at most is read.
-			int remainingBytes = this->AvailableBytes();
+			size_t remainingBytes = this->AvailableBytes();
 			int READ_SIZE = this->RECV_BUF_SIZE;
 			if (remainingBytes > 0 && remainingBytes < READ_SIZE)
 				READ_SIZE = remainingBytes;
@@ -472,8 +477,8 @@ namespace Briand {
 		return std::move(data);
 	}
 
-	int BriandIDFSocketTlsClient::AvailableBytes() {
-		int bytes_avail = 0;
+	size_t BriandIDFSocketTlsClient::AvailableBytes() {
+		size_t bytes_avail = 0;
 
 		if (this->CONNECTED) {
 			// Call a read without buffer (does not download data)
