@@ -202,7 +202,7 @@ namespace Briand {
 		// if (this->VERBOSE) printf("[%s] Poll result: %d flags: %d Bytes avail: %d\n", this->CLIENT_NAME.c_str(), ret, fds.revents, this->AvailableBytes());
 
 		// Read until bytes received or just one chunk requested
-		size_t receivedBytes;
+		int receivedBytes;
 		do {
 			// The following seems to resolve the long delay. 
 			// The blocking request for always RECV_BUF_SIZE seems to keep socket blocked until exactly recv_buf_size at most is read.
