@@ -73,7 +73,9 @@
 		#include <cstring>
 		#include <thread>
 		#include <chrono>
+		#include <algorithm>
 		#include <unistd.h>
+		#include <signal.h>
 
 		// Resource usage
 		#include <sys/resource.h>
