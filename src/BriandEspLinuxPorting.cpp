@@ -301,7 +301,7 @@
 		cout << "done." << endl;
 
 		// Kill all processes (from newer to older)
-		for (int i=BRIAND_TASK_POOL->size() - 1; i>0; i--) {
+		for (int i=BRIAND_TASK_POOL->size() - 1; i>=0; i--) {
 			string tname = BRIAND_TASK_POOL->at(i)->name;
 			pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
 			delete BRIAND_TASK_POOL->at(i);
