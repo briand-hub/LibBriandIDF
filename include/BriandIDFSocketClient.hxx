@@ -142,7 +142,7 @@ namespace Briand {
 		 * Return number of available bytes that could be read. 
 		 * @return number of waiting bytes
 		*/
-		virtual int AvailableBytes();
+		virtual size_t AvailableBytes();
 
 		/**
 		 * Return the internal socket file descriptor

@@ -196,7 +196,12 @@
 
 	unique_ptr<vector<TaskHandle_t>> BRIAND_TASK_POOL = nullptr;
 
-	void vTaskDelay(TickType_t delay) { std::this_thread::sleep_for( std::chrono::milliseconds(delay) ); }
+	TickType_t CTRL_C_MAX_WAIT = 0; // this is useful max waiting time before killing thread (see main()) 
+
+	void vTaskDelay(TickType_t delay) { 
+		if (CTRL_C_MAX_WAIT < delay) CTRL_C_MAX_WAIT = delay;
+		std::this_thread::sleep_for( std::chrono::milliseconds(delay) ); 
+	}
 
 	uint64_t esp_timer_get_time() { return (uint64_t)time(NULL); }
 
@@ -210,15 +215,20 @@
 	{
 		// do not worry for prioriry and task depth now...
 
-		std::thread t (pvTaskCode, pvParameters);
-		
+		std::thread t(pvTaskCode, pvParameters);
+		TaskHandle_t tHandle = new BriandIDFPortingTaskHandle(t.native_handle(), pcName, t.get_id());
+
+		if (pvCreatedTask != NULL) {
+			*pvCreatedTask = tHandle;
+		}
+
 		// Add the task to pool BEFORE detach() otherwise native id is lost
-		BRIAND_TASK_POOL->push_back( new BriandIDFPortingTaskHandle(t.native_handle(), pcName, t.get_id() ));
+		BRIAND_TASK_POOL->push_back( tHandle );
 
 		t.detach(); // this will create daemon-like threads
 	}
 
-	void xTaskDelete(TaskHandle_t handle) {
+	void vTaskDelete(TaskHandle_t handle) {
 		std::thread::id idToKill;
 		if (handle == NULL) {
 			// Terminate this
@@ -243,36 +253,64 @@
 	// app_main() early declaration with extern keyword so will be found
 	extern "C" { void app_main(); }
 
+	// Ctrl-C event handler
+	bool CTRL_C_EVENT_SET = false;
+	void sig_hnd_Ctrl_C(int s) { CTRL_C_EVENT_SET = true; } 
+
 	// main() method required
 
 	int main(int argc, char** argv) {
+		// Attach Ctrl-C event handler
+		signal(SIGINT, sig_hnd_Ctrl_C);
+
 		// Will create the app_main() method and then remains waiting like esp
 		// Will also do the task scheduler work to check if any thread should be killed
-		cout << "main() Starting. Creating task pool simulation..." << endl;
+		cout << "main(): Starting. Creating task pool simulation..." << endl;
 
 		BRIAND_TASK_POOL = make_unique<vector<TaskHandle_t>>();
-		std::thread main_thread (app_main);
 		
-		// Add main task to pool
-		BRIAND_TASK_POOL->push_back( new BriandIDFPortingTaskHandle(main_thread.native_handle(), "Main", main_thread.get_id()) );
-
-		main_thread.detach();
-
 		cout << "main() Pool started. Use Ctrl-C to terminate" << endl;
+		cout << "Starting app_main()" << endl;
+		app_main(); // This must not be a thread because it terminates!
 
-		while(1) { 
+		cout << "main(): Pool started. Use Ctrl-C to terminate" << endl;
+
+		while(!CTRL_C_EVENT_SET) { 
 			// Check if any instanced thread should be terminated
 			for (int i=0; i<BRIAND_TASK_POOL->size(); i++) {
 				if (BRIAND_TASK_POOL->at(i)->toBeKilled) {
+					string tname = BRIAND_TASK_POOL->at(i)->name;
 					pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
 					delete BRIAND_TASK_POOL->at(i);
 					BRIAND_TASK_POOL->erase(BRIAND_TASK_POOL->begin() + i);
-					cout << "Thread #" << i << " killed" << endl;
+					cout << "Thread #" << i << "(" << tname << ") killed" << endl;
 				}
 			}
 				
 			std::this_thread::sleep_for( std::chrono::milliseconds(500) ); 
 		}
+
+		cout << endl << endl << "*** Ctrl-C event caught! ***" << endl << endl;
+
+		// Wait for a maximum time before killing threads because some threads
+		// may have a vTaskDelay in progress. However the maximum delay time is set
+		// into the CTRL_C_MAX_WAIT variable and should do the trick (adding 1 second)
+		CTRL_C_MAX_WAIT += 1000; 
+		cout << "*** Waiting max. " << CTRL_C_MAX_WAIT << "ms before killing...";
+		std::this_thread::sleep_for( std::chrono::milliseconds(CTRL_C_MAX_WAIT) );
+		cout << "done." << endl;
+
+		// Kill all processes (from newer to older)
+		for (int i=BRIAND_TASK_POOL->size() - 1; i>=0; i--) {
+			string tname = BRIAND_TASK_POOL->at(i)->name;
+			pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
+			delete BRIAND_TASK_POOL->at(i);
+			BRIAND_TASK_POOL->erase(BRIAND_TASK_POOL->begin() + i);
+			cout << "Thread #" << i << "(" << tname << ") killed" << endl;
+		}
+
+		cout << endl << endl << "*** All threads killed! Exiting ***" << endl << endl;
+		exit(0);
 	}
 
 #endif
