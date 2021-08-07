@@ -220,8 +220,9 @@ namespace Briand {
 			}
 
 			// Check if the remainingBytes were less  than or equal the receiving buffer size. If so, we finished.
-			if (remainingBytes > 0 && remainingBytes <= this->RECV_BUF_SIZE)
-				break;
+			// Removed: truncated response risk!
+			// if (remainingBytes > 0 && remainingBytes <= this->RECV_BUF_SIZE)
+			// 	break;
 
 		} while(receivedBytes > 0 && !oneChunk);
 
