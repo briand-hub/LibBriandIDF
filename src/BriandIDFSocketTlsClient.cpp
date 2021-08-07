@@ -467,8 +467,8 @@ namespace Briand {
 			if (ret > 0) data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + ret);
 
 			// Check if the remainingBytes were less  than or equal the receiving buffer size. If so, we finished.
-			if (remainingBytes > 0 && remainingBytes <= this->RECV_BUF_SIZE)
-				break;
+			// if (remainingBytes > 0 && remainingBytes <= this->RECV_BUF_SIZE)
+			// 	break;
 
 		} while(ret != 0 && !oneChunk);
 
