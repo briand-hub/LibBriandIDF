@@ -191,7 +191,7 @@
 	}
 
 	BriandIDFPortingTaskHandle::~BriandIDFPortingTaskHandle() {
-		cout << "BriandIDFPortingTaskHandle: " << this->name << " Destroyer" << endl;
+		cout << "BriandIDFPortingTaskHandle: " << this->name << " destroyed." << endl;
 	}
 
 	unique_ptr<vector<TaskHandle_t>> BRIAND_TASK_POOL = nullptr;
@@ -230,7 +230,8 @@
 
 	void vTaskDelete(TaskHandle_t handle) {
 		std::thread::id idToKill;
-		if (handle == NULL) {
+
+		if (handle == NULL || handle == nullptr) {
 			// Terminate this
 			idToKill = std::this_thread::get_id();
 		}
@@ -238,10 +239,12 @@
 			idToKill = handle->thread_id;
 		}
 
-		for (int i = 0; i<BRIAND_TASK_POOL->size(); i++) {
-			if (BRIAND_TASK_POOL->at(i)->thread_id == idToKill) {
-				BRIAND_TASK_POOL->at(i)->toBeKilled = true;
-				break;
+		if (BRIAND_TASK_POOL != nullptr) {
+			for (int i = 0; i<BRIAND_TASK_POOL->size(); i++) {
+				if (BRIAND_TASK_POOL->at(i)->thread_id == idToKill) {
+					BRIAND_TASK_POOL->at(i)->toBeKilled = true;
+					break;
+				}
 			}
 		}
 	}
@@ -260,8 +263,11 @@
 	// main() method required
 
 	int main(int argc, char** argv) {
+		// Save this thread id
+		cout << "MAIN ID: " << std::this_thread::get_id() << endl;
+
 		// Attach Ctrl-C event handler
-		signal(SIGINT, sig_hnd_Ctrl_C);
+		sighandler_t oldHandler = signal(SIGINT, sig_hnd_Ctrl_C);
 
 		// Will create the app_main() method and then remains waiting like esp
 		// Will also do the task scheduler work to check if any thread should be killed
@@ -292,25 +298,23 @@
 
 		cout << endl << endl << "*** Ctrl-C event caught! ***" << endl << endl;
 
-		// Wait for a maximum time before killing threads because some threads
-		// may have a vTaskDelay in progress. However the maximum delay time is set
-		// into the CTRL_C_MAX_WAIT variable and should do the trick (adding 1 second)
-		CTRL_C_MAX_WAIT += 1000; 
-		cout << "*** Waiting max. " << CTRL_C_MAX_WAIT << "ms before killing...";
-		std::this_thread::sleep_for( std::chrono::milliseconds(CTRL_C_MAX_WAIT) );
-		cout << "done." << endl;
+		// Reset the original signal handler
+		signal(SIGINT, oldHandler);
 
 		// Kill all processes (from newer to older)
 		for (int i=BRIAND_TASK_POOL->size() - 1; i>=0; i--) {
-			string tname = BRIAND_TASK_POOL->at(i)->name;
-			pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
-			delete BRIAND_TASK_POOL->at(i);
-			BRIAND_TASK_POOL->erase(BRIAND_TASK_POOL->begin() + i);
-			cout << "Thread #" << i << "(" << tname << ") killed" << endl;
+			if (BRIAND_TASK_POOL->at(i) != NULL) {
+				string tname = BRIAND_TASK_POOL->at(i)->name;
+				pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
+				delete BRIAND_TASK_POOL->at(i);
+				cout << "Thread #" << i << "(" << tname << ") killed" << endl;
+			} 
 		}
+				
+		cout << endl << endl << "*** All threads killed! Exiting. ***" << endl << endl;
+		raise(SIGINT);
 
-		cout << endl << endl << "*** All threads killed! Exiting ***" << endl << endl;
-		exit(0);
+		return 0;
 	}
 
 #endif
