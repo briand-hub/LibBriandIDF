@@ -28,7 +28,7 @@ namespace Briand {
 		this->VERBOSE = false;
 		this->CONNECT_TIMEOUT_S = 0;
 		this->IO_TIMEOUT_S = 0;
-		this->RECV_BUF_SIZE = 64;
+		this->RECV_BUF_SIZE = 512;
 		this->_socket = -1;
 	}
 	
