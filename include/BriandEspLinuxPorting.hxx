@@ -13,6 +13,8 @@
     along with this program.  If not, see <https://www.gnu.org/licenses/>.
 */
 
+#pragma once
+
 /** This file is a redefinition of ESP IDF functions for Linux Porting */
 
 /** USING IN HEADERS AND .cpp FILES
@@ -39,7 +41,7 @@
 	OUTNAME = main_linux_exe
 
 	CC = g++
-	CFLAGS = -g -fpermissive -pthread -lmbedtls -lmbedcrypto -lsodium -std=gnu++17
+	CFLAGS = -g -fpermissive -pthread -lmbedtls -lmbedcrypto -lmbedx509 -lsodium -std=gnu++17
 
 
 	main:
@@ -51,7 +53,7 @@
  *  
  * 	USE THE INCLUDED Makefile!
  * 
- *  g++ -o main main.cpp -I../include/ -lmbedtls -llibsodium -lmbedcrypto -pthread -fpermissive
+ *  g++ -o main main.cpp -I../include/ -lmbedtls -llibsodium -lmbedcrypto -lmbedx509 -pthread -fpermissive
  *  
  * 	-pthread is MANDATORY
  *  -fpermissive is MANDATORY
@@ -60,262 +62,416 @@
 
 #if defined(__linux__)
 
-	#include "BriandEspLinuxPorting.hxx"
+	#ifndef BRIAND_LINUX_PORTING_H
+		#define BRIAND_LINUX_PORTING_H
 
-	const char *esp_err_to_name(esp_err_t code) {
-		return "UNDEFINED ON LINUX PLATFORM";
-	}
+		#include <iostream>
+		#include <memory>
+		#include <vector>
+		#include <cstdio>
+		#include <cstdlib>
+		#include <cstring>
+		#include <thread>
+		#include <chrono>
+		#include <algorithm>
+		#include <unistd.h>
+		#include <signal.h>
 
-	esp_log_level_t BRIAND_CURRENT_LOG_LEVEL = ESP_LOG_NONE;
+		// Resource usage
+		#include <sys/resource.h>
+		#include <sys/time.h>
 
-	void esp_log_level_set(const char* tag, esp_log_level_t level) {
-		BRIAND_CURRENT_LOG_LEVEL = level;
-	}
+		// Net
+		#include <netinet/in.h>
+		#include <netinet/tcp.h>
+		#include <netdb.h>
+		#include <sys/ioctl.h>
+		#include <arpa/inet.h>
 
-	esp_log_level_t esp_log_level_get(const char* tag) {
-		return BRIAND_CURRENT_LOG_LEVEL;
-	}
+		// Sockets
+		#include <sys/socket.h>
 
-	void ESP_ERROR_CHECK(esp_err_t e) { /* do nothing */ }
+		// Mbedtls
+		#include <mbedtls/entropy.h>
+		#include <mbedtls/ctr_drbg.h>
+		#include <mbedtls/net_sockets.h>
+		#include <mbedtls/ssl.h>
+		#include <mbedtls/x509.h>
+		#include <mbedtls/debug.h>
 
-	void heap_caps_get_info(multi_heap_info_t* info, uint32_t caps) {
-		bzero(info, sizeof(info));
-		// Standard ESP 320KB
-		// default return 0 for free bytes
-		info->total_free_bytes = 0;
-		info->total_allocated_bytes = 0;
-	}
+		// Libsodium
+		#include <sodium.h>
 
-	void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* info) { info->freq_mhz = 240; }
-	void rtc_clk_cpu_freq_mhz_to_config(uint32_t mhz, rtc_cpu_freq_config_t* out) { out->freq_mhz = mhz; }
-	void rtc_clk_cpu_freq_set_config(rtc_cpu_freq_config_t* info) { /* do nothing */ }
+		using namespace std;
 
-	wifi_mode_t BRIAND_CURRENT_WIFIMODE = WIFI_MODE_NULL;
-	const char* BRIAND_HOST = "localhost";
+		// GPIOS and system basics
 
-	wifi_init_config_t WIFI_INIT_CONFIG_DEFAULT() { return 0; }
-	esp_err_t esp_wifi_get_mode(wifi_mode_t *mode) { *mode = BRIAND_CURRENT_WIFIMODE; return ESP_OK; }
-	esp_err_t esp_wifi_set_mode(wifi_mode_t mode) { BRIAND_CURRENT_WIFIMODE = mode; return ESP_OK; }
-	esp_err_t esp_netif_init() { return ESP_OK; } 
-	esp_err_t esp_event_loop_create_default() { return ESP_OK; } 
-	esp_err_t esp_wifi_init(const wifi_init_config_t *config) { return ESP_OK; }
-
-	esp_netif_t BRIAND_STA;
-	esp_netif_t BRIAND_AP;
-
-	esp_netif_t* esp_netif_create_default_wifi_sta(void) { return &BRIAND_STA; }
-	esp_netif_t* esp_netif_create_default_wifi_ap(void) { return &BRIAND_AP; }
-
-	esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]) {
-		// Return always a null mac
-		for (char i=0; i<6; i++) mac[i] = 0x00;
-		return ESP_OK;
-	}
-
-	esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, const uint8_t mac[6]) { return ESP_OK; }
-
-	esp_err_t esp_netif_get_hostname(esp_netif_t *esp_netif, const char **hostname) { 
-		*hostname = BRIAND_HOST;
-		return ESP_OK; 
-	}
-
-	esp_err_t esp_netif_set_hostname(esp_netif_t *esp_netif, const char *hostname) { return ESP_OK; }
-	esp_err_t esp_wifi_start() { return ESP_OK; }
-	esp_err_t esp_wifi_stop() { return ESP_OK; }
-	esp_err_t esp_wifi_connect() { return ESP_OK; }
-	esp_err_t esp_wifi_disconnect() { return ESP_OK; }
-
-	// should throw expected events.....
-
-	esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base, int32_t event_id, esp_event_handler_t event_handler, void *event_handler_arg, esp_event_handler_instance_t *instance) { 
-		return ESP_OK;
-	}
-
-	esp_err_t esp_event_handler_instance_unregister(esp_event_base_t event_base, int32_t event_id, esp_event_handler_instance_t instance) {
-		return ESP_OK;
-	}
-
-	esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf) {
-		return ESP_OK;
-	}
-
-	esp_netif_dhcp_status_t BRIAND_CURRENT_DHCPC_STATUS = ESP_NETIF_DHCP_STARTED;
-	esp_netif_dhcp_status_t BRIAND_CURRENT_DHCPS_STATUS = ESP_NETIF_DHCP_STARTED;
-	esp_netif_ip_info_t BRIAND_CURRENT_IP;
-
-	esp_err_t esp_netif_dhcpc_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status) {
-		*status = BRIAND_CURRENT_DHCPC_STATUS;
-		return ESP_OK;
-	}
-
-	esp_err_t esp_netif_dhcps_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status) {
-		*status = BRIAND_CURRENT_DHCPS_STATUS;
-		return ESP_OK;
-	}
-
-	esp_err_t esp_netif_dhcpc_stop(esp_netif_t *esp_netif) {
-		BRIAND_CURRENT_DHCPC_STATUS = ESP_NETIF_DHCP_STOPPED;
-		return ESP_OK;
-	}
-
-	esp_err_t esp_netif_dhcpc_start(esp_netif_t *esp_netif) {
-		BRIAND_CURRENT_DHCPC_STATUS = ESP_NETIF_DHCP_STARTED;
-		return ESP_OK;
-	}
-
-	esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif) {
-		BRIAND_CURRENT_DHCPS_STATUS = ESP_NETIF_DHCP_STOPPED;
-		return ESP_OK;
-	}
-
-	esp_err_t esp_netif_dhcps_start(esp_netif_t *esp_netif) {
-		BRIAND_CURRENT_DHCPS_STATUS = ESP_NETIF_DHCP_STARTED;
-		return ESP_OK;
-	}
-
-	esp_err_t esp_netif_get_ip_info(esp_netif_t *esp_netif, esp_netif_ip_info_t *ip_info) {
-		return ESP_OK;
-	}
-
-	esp_err_t esp_netif_set_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_info_t *ip_info) { return ESP_OK; }
-
-	void esp_netif_set_ip4_addr(esp_ip4_addr_t *addr, uint8_t a, uint8_t b, uint8_t c, uint8_t d) { /* do nothing */ }
-
-	char *esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen) { if (buflen < 9) return NULL; strcpy(buf, "0.0.0.0"); return buf; }
-
-	BriandIDFPortingTaskHandle::BriandIDFPortingTaskHandle(const std::thread::native_handle_type& h, const char* name, const std::thread::id& tid) {
-		this->handle = h;
-		this->name = string(name);
-		this->thread_id = tid;
-		this->toBeKilled = false;
-	}
-
-	BriandIDFPortingTaskHandle::~BriandIDFPortingTaskHandle() {
-		cout << "BriandIDFPortingTaskHandle: " << this->name << " destroyed." << endl;
-	}
-
-	unique_ptr<vector<TaskHandle_t>> BRIAND_TASK_POOL = nullptr;
-
-	TickType_t CTRL_C_MAX_WAIT = 0; // this is useful max waiting time before killing thread (see main()) 
-
-	void vTaskDelay(TickType_t delay) { 
-		if (CTRL_C_MAX_WAIT < delay) CTRL_C_MAX_WAIT = delay;
-		std::this_thread::sleep_for( std::chrono::milliseconds(delay) ); 
-	}
-
-	uint64_t esp_timer_get_time() { return (uint64_t)time(NULL); }
-
-	BaseType_t xTaskCreate(
-			TaskFunction_t pvTaskCode,
-			const char * const pcName,
-			const uint32_t usStackDepth,
-			void * const pvParameters,
-			UBaseType_t uxPriority,
-			TaskHandle_t * const pvCreatedTask)
-	{
-		// do not worry for prioriry and task depth now...
-
-		std::thread t(pvTaskCode, pvParameters);
-		TaskHandle_t tHandle = new BriandIDFPortingTaskHandle(t.native_handle(), pcName, t.get_id());
-
-		if (pvCreatedTask != NULL) {
-			*pvCreatedTask = tHandle;
-		}
-
-		// Add the task to pool BEFORE detach() otherwise native id is lost
-		BRIAND_TASK_POOL->push_back( tHandle );
-
-		t.detach(); // this will create daemon-like threads
-	}
-
-	void vTaskDelete(TaskHandle_t handle) {
-		std::thread::id idToKill;
-
-		if (handle == NULL || handle == nullptr) {
-			// Terminate this
-			idToKill = std::this_thread::get_id();
-		}
-		else {
-			idToKill = handle->thread_id;
-		}
-
-		if (BRIAND_TASK_POOL != nullptr) {
-			for (int i = 0; i<BRIAND_TASK_POOL->size(); i++) {
-				if (BRIAND_TASK_POOL->at(i)->thread_id == idToKill) {
-					BRIAND_TASK_POOL->at(i)->toBeKilled = true;
-					break;
-				}
-			}
-		}
-	}
-
-	esp_err_t nvs_flash_init(void) { return ESP_OK; }
-	esp_err_t nvs_flash_erase(void) { return ESP_OK; }
-
-
-	// app_main() early declaration with extern keyword so will be found
-	extern "C" { void app_main(); }
-
-	// Ctrl-C event handler
-	bool CTRL_C_EVENT_SET = false;
-	void sig_hnd_Ctrl_C(int s) { CTRL_C_EVENT_SET = true; } 
-
-	// main() method required
-
-	int main(int argc, char** argv) {
-		// Save this thread id
-		cout << "MAIN ID: " << std::this_thread::get_id() << endl;
-
-		// Attach Ctrl-C event handler
-		sighandler_t oldHandler = signal(SIGINT, sig_hnd_Ctrl_C);
-
-		// Will create the app_main() method and then remains waiting like esp
-		// Will also do the task scheduler work to check if any thread should be killed
-		cout << "main(): Starting. Creating task pool simulation..." << endl;
-
-		BRIAND_TASK_POOL = make_unique<vector<TaskHandle_t>>();
+		typedef enum {
+			GPIO_NUM_NC = -1,    /*!< Use to signal not connected to S/W */
+			GPIO_NUM_0 = 0,     /*!< GPIO0, input and output */
+			GPIO_NUM_1 = 1,     /*!< GPIO1, input and output */
+			GPIO_NUM_2 = 2,     /*!< GPIO2, input and output */
+			GPIO_NUM_3 = 3,     /*!< GPIO3, input and output */
+			GPIO_NUM_4 = 4,     /*!< GPIO4, input and output */
+			GPIO_NUM_5 = 5,     /*!< GPIO5, input and output */
+			GPIO_NUM_6 = 6,     /*!< GPIO6, input and output */
+			GPIO_NUM_7 = 7,     /*!< GPIO7, input and output */
+			GPIO_NUM_8 = 8,     /*!< GPIO8, input and output */
+			GPIO_NUM_9 = 9,     /*!< GPIO9, input and output */
+			GPIO_NUM_10 = 10,   /*!< GPIO10, input and output */
+			GPIO_NUM_11 = 11,   /*!< GPIO11, input and output */
+			GPIO_NUM_12 = 12,   /*!< GPIO12, input and output */
+			GPIO_NUM_13 = 13,   /*!< GPIO13, input and output */
+			GPIO_NUM_14 = 14,   /*!< GPIO14, input and output */
+			GPIO_NUM_15 = 15,   /*!< GPIO15, input and output */
+			GPIO_NUM_16 = 16,   /*!< GPIO16, input and output */
+			GPIO_NUM_17 = 17,   /*!< GPIO17, input and output */
+			GPIO_NUM_18 = 18,   /*!< GPIO18, input and output */
+			GPIO_NUM_19 = 19,   /*!< GPIO19, input and output */
+			GPIO_NUM_20 = 20,   /*!< GPIO20, input and output */
+			GPIO_NUM_21 = 21,   /*!< GPIO21, input and output */
+			GPIO_NUM_26 = 26,   /*!< GPIO26, input and output */
+			GPIO_NUM_27 = 27,   /*!< GPIO27, input and output */
+			GPIO_NUM_28 = 28,   /*!< GPIO28, input and output */
+			GPIO_NUM_29 = 29,   /*!< GPIO29, input and output */
+			GPIO_NUM_30 = 30,   /*!< GPIO30, input and output */
+			GPIO_NUM_31 = 31,   /*!< GPIO31, input and output */
+			GPIO_NUM_32 = 32,   /*!< GPIO32, input and output */
+			GPIO_NUM_33 = 33,   /*!< GPIO33, input and output */
+			GPIO_NUM_34 = 34,   /*!< GPIO34, input and output */
+			GPIO_NUM_35 = 35,   /*!< GPIO35, input and output */
+			GPIO_NUM_36 = 36,   /*!< GPIO36, input and output */
+			GPIO_NUM_37 = 37,   /*!< GPIO37, input and output */
+			GPIO_NUM_38 = 38,   /*!< GPIO38, input and output */
+			GPIO_NUM_39 = 39,   /*!< GPIO39, input and output */
+			GPIO_NUM_40 = 40,   /*!< GPIO40, input and output */
+			GPIO_NUM_41 = 41,   /*!< GPIO41, input and output */
+			GPIO_NUM_42 = 42,   /*!< GPIO42, input and output */
+			GPIO_NUM_43 = 43,   /*!< GPIO43, input and output */
+			GPIO_NUM_44 = 44,   /*!< GPIO44, input and output */
+			GPIO_NUM_45 = 45,   /*!< GPIO45, input and output */
+			GPIO_NUM_46 = 46,   /*!< GPIO46, input mode only */
+			GPIO_NUM_MAX,
+		/** @endcond */
+		} gpio_num_t;
 		
-		cout << "main() Pool started. Use Ctrl-C to terminate" << endl;
-		cout << "Starting app_main()" << endl;
-		app_main(); // This must not be a thread because it terminates!
+		#define GPIO_MODE_DEF_DISABLE         (0b00000000)
+		#define GPIO_MODE_DEF_INPUT           (0b00000001)    ///< bit mask for input
+		#define GPIO_MODE_DEF_OUTPUT          (0b00000010)    ///< bit mask for output
+		#define GPIO_MODE_DEF_OD              (0b00000100)    ///< bit mask for OD mode
 
-		cout << "main(): Pool started. Use Ctrl-C to terminate" << endl;
+		typedef enum {
+			GPIO_MODE_DISABLE = GPIO_MODE_DEF_DISABLE,                                                         /*!< GPIO mode : disable input and output             */
+			GPIO_MODE_INPUT = GPIO_MODE_DEF_INPUT,                                                             /*!< GPIO mode : input only                           */
+			GPIO_MODE_OUTPUT = GPIO_MODE_DEF_OUTPUT,                                                           /*!< GPIO mode : output only mode                     */
+			GPIO_MODE_OUTPUT_OD = ((GPIO_MODE_DEF_OUTPUT) | (GPIO_MODE_DEF_OD)),                               /*!< GPIO mode : output only with open-drain mode     */
+			GPIO_MODE_INPUT_OUTPUT_OD = ((GPIO_MODE_DEF_INPUT) | (GPIO_MODE_DEF_OUTPUT) | (GPIO_MODE_DEF_OD)), /*!< GPIO mode : output and input with open-drain mode*/
+			GPIO_MODE_INPUT_OUTPUT = ((GPIO_MODE_DEF_INPUT) | (GPIO_MODE_DEF_OUTPUT)),                         /*!< GPIO mode : output and input mode                */
+		} gpio_mode_t;
 
-		while(!CTRL_C_EVENT_SET) { 
-			// Check if any instanced thread should be terminated
-			for (int i=0; i<BRIAND_TASK_POOL->size(); i++) {
-				if (BRIAND_TASK_POOL->at(i)->toBeKilled) {
-					string tname = BRIAND_TASK_POOL->at(i)->name;
-					pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
-					delete BRIAND_TASK_POOL->at(i);
-					BRIAND_TASK_POOL->erase(BRIAND_TASK_POOL->begin() + i);
-					cout << "Thread #" << i << "(" << tname << ") killed" << endl;
-				}
-			}
-				
-			std::this_thread::sleep_for( std::chrono::milliseconds(500) ); 
-		}
+		#define esp_restart() { printf("\n\n***** esp_restart() SYSTEM REBOOT. Hit Ctrl-C to restart main program.*****\n\n"); }
+        #define gpio_set_level(n, l) { printf("\n\n***** GPIO %d => Level = %d*****\n\n", n, l); }
+		#define gpio_get_level(n) GPIO_MODE_DISABLE
+        #define gpio_set_direction(n, d) { printf("\n\n***** GPIO %d => Direction = %d*****\n\n", n, d); }
 
-		cout << endl << endl << "*** Ctrl-C event caught! ***" << endl << endl;
 
-		// Reset the original signal handler
-		signal(SIGINT, oldHandler);
+		// ERROR AND LOG FUNCTION
 
-		// Kill all processes (from newer to older)
-		for (int i=BRIAND_TASK_POOL->size() - 1; i>=0; i--) {
-			if (BRIAND_TASK_POOL->at(i) != NULL) {
-				string tname = BRIAND_TASK_POOL->at(i)->name;
-				pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
-				delete BRIAND_TASK_POOL->at(i);
-				cout << "Thread #" << i << "(" << tname << ") killed" << endl;
-			} 
-		}
-				
-		cout << endl << endl << "*** All threads killed! Exiting, hit Ctrl-C again to close. ***" << endl << endl;
+		#define ESP_OK 0
+		#define ESP_FAIL -1
+		#define ESP_ERR_NOT_FOUND -2
+		#define ESP_ERR_NVS_NO_FREE_PAGES -3
+		#define ESP_ERR_NVS_NEW_VERSION_FOUND -4
 
-		exit(0);
+		typedef int esp_err_t;
 
-		return 0;
-	}
+		const char *esp_err_to_name(esp_err_t code);
 
-#endif
+		// LOGGING FUNCTIONS
+
+		typedef enum esp_log_level {
+			ESP_LOG_NONE,       /*!< No log output */
+			ESP_LOG_ERROR,      /*!< Critical errors, software module can not recover on its own */
+			ESP_LOG_WARN,       /*!< Error conditions from which recovery measures have been taken */
+			ESP_LOG_INFO,       /*!< Information messages which describe normal flow of events */
+			ESP_LOG_DEBUG,      /*!< Extra information which is not necessary for normal use (values, pointers, sizes, etc). */
+			ESP_LOG_VERBOSE     /*!< Bigger chunks of debugging information, or frequent messages which can potentially flood the output. */
+		} esp_log_level_t;
+
+		extern esp_log_level_t BRIAND_CURRENT_LOG_LEVEL;
+
+		void esp_log_level_set(const char* tag, esp_log_level_t level);
+
+		esp_log_level_t esp_log_level_get(const char* tag);
+
+		void ESP_ERROR_CHECK(esp_err_t e);
+
+		#define ESP_LOGI(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_INFO) { printf("I "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGV(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_VERBOSE) { printf("V "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGD(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_DEBUG) { printf("D "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGE(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_ERROR) { printf("E "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGW(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_WARN) { printf("W "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		
+
+		// FILESYSTEM FUNCTIONS
+
+		// Only definition, not needed!
+
+		typedef struct {
+				const char* base_path;          /*!< File path prefix associated with the filesystem. */
+				const char* partition_label;    /*!< Optional, label of SPIFFS partition to use. If set to NULL, first partition with subtype=spiffs will be used. */
+				unsigned int max_files;         /*!< Maximum files that could be open at the same time. */
+				bool format_if_mount_failed;    /*!< If true, it will format the file system if it fails to mount. */
+		} esp_vfs_spiffs_conf_t;
+
+		#define esp_vfs_spiffs_register(conf_ptr) ESP_OK
+		#define esp_spiffs_info(l, t, u) ESP_OK
+		#define esp_vfs_spiffs_unregister(ptr) ESP_OK
+
+		
+		// CPU/MEMORY FUNCTIONS
+
+		#define MALLOC_CAP_INTERNAL 0
+
+		typedef struct multi_heap_info {
+			unsigned long total_free_bytes;
+			unsigned long total_allocated_bytes;
+		} multi_heap_info_t;
+
+		typedef struct rtc_cpu_freq_config {
+			unsigned long freq_mhz;
+		} rtc_cpu_freq_config_t;
+
+		void heap_caps_get_info(multi_heap_info_t* info, uint32_t caps);
+
+		void rtc_clk_cpu_freq_get_config(rtc_cpu_freq_config_t* info);
+		void rtc_clk_cpu_freq_mhz_to_config(uint32_t mhz, rtc_cpu_freq_config_t* out);
+		void rtc_clk_cpu_freq_set_config(rtc_cpu_freq_config_t* info);
+
+		#define esp_get_free_heap_size() 320000
+
+
+		// WIFI FUNCTIONS
+
+		typedef enum wifi_mode {
+			WIFI_MODE_NULL = 0,  /**< null mode */
+			WIFI_MODE_STA,       /**< WiFi station mode */
+			WIFI_MODE_AP,        /**< WiFi soft-AP mode */
+			WIFI_MODE_APSTA,     /**< WiFi station + soft-AP mode */
+			WIFI_MODE_MAX
+		} wifi_mode_t;
+
+		typedef enum esp_interface {
+			ESP_IF_WIFI_STA = 0,     /**< ESP32 station interface */
+			ESP_IF_WIFI_AP,          /**< ESP32 soft-AP interface */
+			ESP_IF_ETH,              /**< ESP32 ethernet interface */
+			ESP_IF_MAX
+		} esp_interface_t;
+
+		typedef enum wifi_interface {
+			WIFI_IF_STA = 0,
+			WIFI_IF_AP  = 1,
+		} wifi_interface_t;
+
+		typedef struct {
+			uint8_t authmode;
+			bool required;
+			bool capable;
+		} briand_min_required_wifi_config;
+
+		typedef struct {
+			uint8_t ssid[32];           /**< SSID of ESP32 soft-AP. If ssid_len field is 0, this must be a Null terminated string. Otherwise, length is set according to ssid_len. */
+			uint8_t password[64];       /**< Password of ESP32 soft-AP. */
+			uint8_t ssid_len;           /**< Optional length of SSID field. */
+			uint8_t channel;            /**< Channel of ESP32 soft-AP */
+			uint8_t authmode;  /**< Auth mode of ESP32 soft-AP. Do not support AUTH_WEP in soft-AP mode */
+			uint8_t ssid_hidden;        /**< Broadcast SSID or not, default 0, broadcast the SSID */
+			uint8_t max_connection;     /**< Max number of stations allowed to connect in, default 4, max 10 */
+			uint16_t beacon_interval;   /**< Beacon interval which should be multiples of 100. Unit: TU(time unit, 1 TU = 1024 us). Range: 100 ~ 60000. Default value: 100 */
+			uint8_t pairwise_cipher;   /**< pairwise cipher of SoftAP, group cipher will be derived using this. cipher values are valid starting from WIFI_CIPHER_TYPE_TKIP, enum values before that will be considered as invalid and default cipher suites(TKIP+CCMP) will be used. Valid cipher suites in softAP mode are WIFI_CIPHER_TYPE_TKIP, WIFI_CIPHER_TYPE_CCMP and WIFI_CIPHER_TYPE_TKIP_CCMP. */
+			bool ftm_responder;         /**< Enable FTM Responder mode */
+		} wifi_ap_config_t;
+
+		/** @brief STA configuration settings for the ESP32 */
+		typedef struct {
+			uint8_t ssid[32];      /**< SSID of target AP. */
+			uint8_t password[64];  /**< Password of target AP. */
+			uint8_t scan_method;    /**< do all channel scan or fast scan */
+			bool bssid_set;        /**< whether set MAC address of target AP or not. Generally, station_config.bssid_set needs to be 0; and it needs to be 1 only when users need to check the MAC address of the AP.*/
+			uint8_t bssid[6];     /**< MAC address of target AP*/
+			uint8_t channel;       /**< channel of target AP. Set to 1~13 to scan starting from the specified channel before connecting to AP. If the channel of AP is unknown, set it to 0.*/
+			uint16_t listen_interval;   /**< Listen interval for ESP32 station to receive beacon when WIFI_PS_MAX_MODEM is set. Units: AP beacon intervals. Defaults to 3 if set to 0. */
+			uint8_t sort_method;    /**< sort the connect AP in the list by rssi or security mode */
+			briand_min_required_wifi_config  threshold;     /**< When sort_method is set, only APs which have an auth mode that is more secure than the selected auth mode and a signal stronger than the minimum RSSI will be used. */
+			briand_min_required_wifi_config pmf_cfg;    /**< Configuration for Protected Management Frame. Will be advertized in RSN Capabilities in RSN IE. */
+			uint32_t rm_enabled:1;        /**< Whether Radio Measurements are enabled for the connection */
+			uint32_t btm_enabled:1;       /**< Whether BSS Transition Management is enabled for the connection */
+			uint32_t reserved:30;         /**< Reserved for future feature set */
+		} wifi_sta_config_t;
+
+		/** @brief Configuration data for ESP32 AP or STA.
+		 *
+		 * The usage of this union (for ap or sta configuration) is determined by the accompanying
+		 * interface argument passed to esp_wifi_set_config() or esp_wifi_get_config()
+		 *
+		 */
+		typedef union {
+			wifi_ap_config_t  ap;  /**< configuration of AP */
+			wifi_sta_config_t sta; /**< configuration of STA */
+		} wifi_config_t;
+
+		extern wifi_mode_t BRIAND_CURRENT_WIFIMODE;
+		
+		extern const char* BRIAND_HOST;
+
+		typedef int wifi_init_config_t;
+		wifi_init_config_t WIFI_INIT_CONFIG_DEFAULT();
+		esp_err_t esp_wifi_get_mode(wifi_mode_t *mode);
+		esp_err_t esp_wifi_set_mode(wifi_mode_t mode);
+		esp_err_t esp_netif_init();
+		esp_err_t esp_event_loop_create_default();
+		esp_err_t esp_wifi_init(const wifi_init_config_t *config);
+
+		struct esp_netif_obj {};
+		typedef struct esp_netif_obj esp_netif_t;
+
+		typedef const char*  esp_event_base_t; 
+
+		extern esp_netif_t BRIAND_STA;
+		extern esp_netif_t BRIAND_AP;
+
+		esp_netif_t* esp_netif_create_default_wifi_sta(void);
+		esp_netif_t* esp_netif_create_default_wifi_ap(void);
+
+		esp_err_t esp_wifi_get_mac(wifi_interface_t ifx, uint8_t mac[6]);
+
+		esp_err_t esp_wifi_set_mac(wifi_interface_t ifx, const uint8_t mac[6]);
+
+		esp_err_t esp_netif_get_hostname(esp_netif_t *esp_netif, const char **hostname);
+
+		esp_err_t esp_netif_set_hostname(esp_netif_t *esp_netif, const char *hostname);
+		esp_err_t esp_wifi_start();
+		esp_err_t esp_wifi_stop();
+		esp_err_t esp_wifi_connect();
+		esp_err_t esp_wifi_disconnect();
+
+		typedef void* esp_event_handler_instance_t;
+		typedef void* esp_event_handler_t;
+		typedef void wifi_event_ap_staconnected_t;
+		typedef void wifi_event_ap_stadisconnected_t;
+
+		#define WIFI_EVENT NULL
+		#define IP_EVENT NULL
+		#define IP_EVENT_STA_GOT_IP NULL
+		#define WIFI_EVENT_STA_START NULL
+		#define WIFI_EVENT_AP_STACONNECTED NULL
+		#define WIFI_EVENT_AP_STADISCONNECTED NULL
+		#define WIFI_EVENT_WIFI_READY NULL
+
+		#define WIFI_AUTH_OPEN 1
+		#define WIFI_AUTH_WPA2_PSK 2
+		#define WIFI_AUTH_WPA_WPA2_PSK 3
+
+		// should throw expected events.....
+
+		esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base, int32_t event_id, esp_event_handler_t event_handler, void *event_handler_arg, esp_event_handler_instance_t *instance);
+		esp_err_t esp_event_handler_instance_unregister(esp_event_base_t event_base, int32_t event_id, esp_event_handler_instance_t instance);
+		esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
+
+
+		// NETWORKING
+
+		typedef unsigned int esp_ip4_addr_t;
+
+		typedef struct {
+			unsigned int ip;      /**< Interface IPV4 address */
+			unsigned int netmask; /**< Interface IPV4 netmask */
+			unsigned int gw;      /**< Interface IPV4 gateway address */
+		} esp_netif_ip_info_t;
+
+		typedef enum esp_netif_dhcp_status {
+			ESP_NETIF_DHCP_INIT = 0,    /**< DHCP client/server is in initial state (not yet started) */
+			ESP_NETIF_DHCP_STARTED,     /**< DHCP client/server has been started */
+			ESP_NETIF_DHCP_STOPPED,     /**< DHCP client/server has been stopped */
+			ESP_NETIF_DHCP_STATUS_MAX
+		} esp_netif_dhcp_status_t;
+
+		extern esp_netif_dhcp_status_t BRIAND_CURRENT_DHCPC_STATUS;
+		extern esp_netif_dhcp_status_t BRIAND_CURRENT_DHCPS_STATUS;
+		extern esp_netif_ip_info_t BRIAND_CURRENT_IP;
+
+		esp_err_t esp_netif_dhcpc_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status);
+		esp_err_t esp_netif_dhcps_get_status(esp_netif_t *esp_netif, esp_netif_dhcp_status_t *status);
+		esp_err_t esp_netif_dhcpc_stop(esp_netif_t *esp_netif);
+		esp_err_t esp_netif_dhcpc_start(esp_netif_t *esp_netif);
+		esp_err_t esp_netif_dhcps_stop(esp_netif_t *esp_netif);
+		esp_err_t esp_netif_dhcps_start(esp_netif_t *esp_netif);
+		esp_err_t esp_netif_get_ip_info(esp_netif_t *esp_netif, esp_netif_ip_info_t *ip_info);
+		void esp_netif_set_ip4_addr(esp_ip4_addr_t *addr, uint8_t a, uint8_t b, uint8_t c, uint8_t d);
+
+		esp_err_t esp_netif_set_ip_info(esp_netif_t *esp_netif, const esp_netif_ip_info_t *ip_info);
+
+		char *esp_ip4addr_ntoa(const esp_ip4_addr_t *addr, char *buf, int buflen);
+
+		#define MACSTR "%02x:%02x:%02x:02x:%02x:02x"
+		#define MAC2STR(x) "00:00:00:00:00:00"
+
+		#define ip4addr_ntoa(addr_ptr) inet_ntoa(addr_ptr)
+        #define ip4addr_aton(n, addr_ptr) inet_aton(n, addr_ptr)
+        typedef in_addr_t ip4_addr_t;
+
+		#define SNTP_SYNC_STATUS_COMPLETED 0
+		#define SNTP_OPMODE_POLL 0
+		#define sntp_get_sync_status() SNTP_SYNC_STATUS_COMPLETED
+		#define sntp_init() ESP_OK
+		#define sntp_setservername(n, host_ptr) ESP_OK
+		#define sntp_setoperatingmode(mode) ESP_OK
+
+
+		// TASKS AND TIME
+
+		/** Class to handle the Thread Pool */
+		class BriandIDFPortingTaskHandle {
+			public:
+			bool toBeKilled;
+			std::thread::native_handle_type handle;
+			std::thread::id thread_id;
+			string name;
+
+			BriandIDFPortingTaskHandle(const std::thread::native_handle_type& h, const char* name, const std::thread::id& tid);
+			~BriandIDFPortingTaskHandle();
+		};
+
+		#define portTICK_PERIOD_MS 1
+
+		typedef uint64_t TickType_t;
+		typedef void BaseType_t;
+		typedef uint16_t UBaseType_t;
+		typedef void (*TaskFunction_t)( void * );
+		
+		typedef BriandIDFPortingTaskHandle* TaskHandle_t;
+		extern unique_ptr<vector<TaskHandle_t>> BRIAND_TASK_POOL;
+
+		void vTaskDelay(TickType_t delay);
+
+		uint64_t esp_timer_get_time();
+
+		BaseType_t xTaskCreate(
+				TaskFunction_t pvTaskCode,
+				const char * const pcName,
+				const uint32_t usStackDepth,
+				void * const pvParameters,
+				UBaseType_t uxPriority,
+				TaskHandle_t * const pvCreatedTask);
+
+		void vTaskDelete(TaskHandle_t handle);
+
+		// MISC
+
+		esp_err_t nvs_flash_init(void);
+		esp_err_t nvs_flash_erase(void);
+		#define esp_random() rand()
+
+	#endif /* BRIAND_LINUX_PORTING_H */
+
+#endif /* defined(__linux__) */
