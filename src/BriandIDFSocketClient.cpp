@@ -171,7 +171,7 @@ namespace Briand {
 			return false;
 		}
 
-		if (write(this->_socket, data->data(), data->size()) < 0) {
+		if (send(this->_socket, data->data(), data->size(), 0) < 0) {
 			if (this->VERBOSE) printf("[%s] Error on write.\n", this->CLIENT_NAME.c_str());
 			return false;
 		}
@@ -213,7 +213,7 @@ namespace Briand {
 
 			auto recvBuffer = make_unique<unsigned char[]>(READ_SIZE);
 
-			receivedBytes = read(this->_socket, recvBuffer.get(), READ_SIZE);
+			receivedBytes = recv(this->_socket, recvBuffer.get(), READ_SIZE, 0);
 
 			if (receivedBytes > 0) {
 				data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + receivedBytes);
@@ -231,13 +231,47 @@ namespace Briand {
 		return std::move(data);
 	}
 
+	unique_ptr<vector<unsigned char>> BriandIDFSocketClient::ReadDataUntil(const unsigned char& stop, const size_t& limit, bool& found) {
+		auto data = make_unique<vector<unsigned char>>();
+
+		if (!this->CONNECTED) return std::move(data);
+
+		// Read until bytes received or stop char is found, 1 byte per cycle.
+		int receivedBytes;
+		found = false;
+
+		do {
+			size_t remainingBytes = this->AvailableBytes();
+
+			if (remainingBytes <= 0) {
+				// Error, stop char not found before EOF. 
+				return std::move(data);
+			}
+
+			unsigned char buffer;
+			receivedBytes = recv(this->_socket, &buffer, 1, 0);
+
+			// If stop char found, stop.
+			if (buffer == stop) {
+				found = true;
+			}
+
+			if (receivedBytes > 0) {
+				data->push_back(buffer);
+			}
+
+		} while(receivedBytes > 0 && !found && data->size() < limit);
+
+		return std::move(data);
+	}
+
 	size_t BriandIDFSocketClient::AvailableBytes() {
 		size_t bytes_avail = 0;
 
 		if (this->CONNECTED) {
 			// Call a read without buffer (does not download data)
 			char temp;
-			read(this->_socket, &temp, 0);
+			recv(this->_socket, &temp, 0, MSG_PEEK);
 			ioctl(this->_socket, FIONREAD, &bytes_avail);
 		}
 			

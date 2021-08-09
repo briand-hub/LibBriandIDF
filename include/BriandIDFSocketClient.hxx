@@ -139,6 +139,15 @@ namespace Briand {
 		virtual unique_ptr<vector<unsigned char>> ReadData(bool oneChunk = false);
 
 		/**
+		 * Read data.
+		 * @param stop The stop byte (ex. '\n')
+		 * @param limit Limit to this amount of bytes. If stop char not found, return (with empty data)
+		 * @param found Set to true if the stop byte is found, otherwise returns the data until limit reached
+		 * @return Pointer to vector with read data (NOT including stop byte!), empty if error occoured or EOF
+		*/
+		virtual unique_ptr<vector<unsigned char>> ReadDataUntil(const unsigned char& stop, const size_t& limit, bool& found);
+
+		/**
 		 * Return number of available bytes that could be read. 
 		 * @return number of waiting bytes
 		*/

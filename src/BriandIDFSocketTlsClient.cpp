@@ -478,6 +478,59 @@ namespace Briand {
 		return std::move(data);
 	}
 
+	unique_ptr<vector<unsigned char>> BriandIDFSocketTlsClient::ReadDataUntil(const unsigned char& stop, const size_t& limit, bool& found) {
+		auto data = make_unique<vector<unsigned char>>();
+
+		if (!this->CONNECTED) return std::move(data);
+
+		// Read until bytes received or stop char is found, 1 byte per cycle.
+		int ret;
+		found = false;
+
+		do {
+			size_t remainingBytes = this->AvailableBytes();
+
+			if (remainingBytes <= 0) {
+				// Error, stop char not found before EOF. 
+				return std::move(data);
+			}
+
+			unsigned char buffer;
+			ret = mbedtls_ssl_read(&this->ssl, &buffer, 1);
+
+			if(ret == MBEDTLS_ERR_SSL_WANT_WRITE) {
+				// Wait
+				continue;
+			}
+			else if(ret == MBEDTLS_ERR_SSL_PEER_CLOSE_NOTIFY || ret == MBEDTLS_ERR_SSL_WANT_READ) {
+				// Finish because server wants to close or pass to the read (has finished writing us)
+				break;
+			}
+			else if (ret < 0) {
+				// Error
+				auto errBuf = make_unique<char[]>(this->ERR_BUF_SIZE);
+				mbedtls_strerror(ret, errBuf.get(), this->ERR_BUF_SIZE - 1);
+				if (this->VERBOSE) printf("[%s] Failed to read: %s\n", this->CLIENT_NAME.c_str(), errBuf.get());
+				errBuf.reset();
+				// Connection must be closed!
+				this->Disconnect();
+				return std::move(data);
+			}
+
+			// If stop char found, stop.
+			if (buffer == stop) {
+				found = true;
+			}
+
+			if (ret > 0) {
+				data->push_back(buffer);
+			}
+
+		} while(ret > 0 && !found && data->size() < limit);
+
+		return std::move(data);
+	}
+
 	size_t BriandIDFSocketTlsClient::AvailableBytes() {
 		size_t bytes_avail = 0;
 
