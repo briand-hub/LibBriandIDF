@@ -243,11 +243,6 @@ namespace Briand {
 		do {
 			size_t remainingBytes = this->AvailableBytes();
 
-			if (remainingBytes <= 0) {
-				// Error, stop char not found before EOF. 
-				return std::move(data);
-			}
-
 			unsigned char buffer;
 			receivedBytes = recv(this->_socket, &buffer, 1, 0);
 
@@ -260,6 +255,9 @@ namespace Briand {
 				data->push_back(buffer);
 			}
 
+			if (remainingBytes <= 0)
+				break;
+
 		} while(receivedBytes > 0 && !found && data->size() < limit);
 
 		return std::move(data);
@@ -271,7 +269,7 @@ namespace Briand {
 		if (this->CONNECTED) {
 			// Call a read without buffer (does not download data)
 			char temp;
-			recv(this->_socket, &temp, 0, MSG_PEEK);
+			recv(this->_socket, &temp, 0, 0);
 			ioctl(this->_socket, FIONREAD, &bytes_avail);
 		}
 			
