@@ -241,7 +241,7 @@ namespace Briand {
 		found = false;
 
 		do {
-			size_t remainingBytes = this->AvailableBytes();
+			//size_t remainingBytes = this->AvailableBytes();
 
 			unsigned char buffer;
 			receivedBytes = recv(this->_socket, &buffer, 1, 0);
@@ -254,10 +254,7 @@ namespace Briand {
 			if (receivedBytes > 0) {
 				data->push_back(buffer);
 			}
-
-			if (remainingBytes <= 0)
-				break;
-
+			
 		} while(receivedBytes > 0 && !found && data->size() < limit);
 
 		return std::move(data);
