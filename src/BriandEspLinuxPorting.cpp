@@ -251,6 +251,10 @@
 
 	esp_err_t nvs_flash_init(void) { return ESP_OK; }
 	esp_err_t nvs_flash_erase(void) { return ESP_OK; }
+	unsigned int esp_random() {
+		srand(time(NULL));
+		return static_cast<unsigned int>(rand());
+	}
 
 
 	// app_main() early declaration with extern keyword so will be found

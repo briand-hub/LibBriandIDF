@@ -470,7 +470,7 @@
 
 		esp_err_t nvs_flash_init(void);
 		esp_err_t nvs_flash_erase(void);
-		#define esp_random() rand()
+		unsigned int esp_random();
 
 	#endif /* BRIAND_LINUX_PORTING_H */
 
