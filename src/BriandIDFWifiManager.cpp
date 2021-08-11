@@ -181,6 +181,22 @@ namespace Briand {
 				wifiManagerInstance->STA_IF_READY = true;
 			}
 		}
+		if (event_id == WIFI_EVENT_STA_DISCONNECTED) {
+			// Set interface ready (ex. for setting hostname)
+			auto wifiManagerInstance = ((BriandIDFWifiManager*)evtArg);
+			if (wifiManagerInstance != nullptr) {
+				wifiManagerInstance->STA_CONNECTED = false;
+				printf("[WIFI MANAGER] STA DISCONNECTED event.\n");
+			}
+		}
+		if (event_id == IP_EVENT_STA_LOST_IP) {
+			// Set interface ready (ex. for setting hostname)
+			auto wifiManagerInstance = ((BriandIDFWifiManager*)evtArg);
+			if (wifiManagerInstance != nullptr) {
+				wifiManagerInstance->STA_CONNECTED = false;
+				printf("[WIFI MANAGER] STA LOST IP event.\n");
+			}
+		}
 		if (event_id == WIFI_EVENT_AP_STACONNECTED) {
 			auto wifiManagerInstance = ((BriandIDFWifiManager*)evtArg);
 			auto event = (wifi_event_ap_staconnected_t*) event_data;
