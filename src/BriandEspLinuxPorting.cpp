@@ -262,7 +262,7 @@
 			unsigned int max = (uxArraySize < BRIAND_TASK_POOL->size() ? uxArraySize : BRIAND_TASK_POOL->size());
 			for (unsigned int i=0; i<max; i++) {
 				bzero(&pxTaskStatusArray[i], sizeof(TaskStatus_t));
-				pxTaskStatusArray[i].xTaskNumber = BRIAND_TASK_POOL->at(i)->thread_id;
+				pxTaskStatusArray[i].xTaskNumber = static_cast<UBaseType_t>(BRIAND_TASK_POOL->at(i)->thread_id);
 				pxTaskStatusArray[i].pcTaskName = BRIAND_TASK_POOL->at(i)->name.c_str();
 				//
 				// TODO : calculate phtread stack size
