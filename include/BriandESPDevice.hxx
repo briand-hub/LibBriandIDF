@@ -138,7 +138,7 @@ namespace Briand {
          * Returns informations about running tasks
          * @return string containing task informations
         */
-       unique_ptr<string> GetSystemTaskInfo() {
+       static unique_ptr<string> GetSystemTaskInfo() {
             auto info = make_unique<string>();
             auto nTask = uxTaskGetNumberOfTasks();
             auto tArray = make_unique<TaskStatus_t[]>(nTask);
