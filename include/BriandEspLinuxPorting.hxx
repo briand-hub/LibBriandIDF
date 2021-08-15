@@ -372,12 +372,18 @@
 		#define WIFI_AUTH_WPA2_PSK 2
 		#define WIFI_AUTH_WPA_WPA2_PSK 3
 
+		typedef enum {
+			WIFI_PS_NONE,        /**< No power save */
+			WIFI_PS_MIN_MODEM,   /**< Minimum modem power saving. In this mode, station wakes up to receive beacon every DTIM period */
+			WIFI_PS_MAX_MODEM,   /**< Maximum modem power saving. In this mode, interval to receive beacons is determined by the listen_interval parameter in wifi_sta_config_t */
+		} wifi_ps_type_t;
+
 		// should throw expected events.....
 
 		esp_err_t esp_event_handler_instance_register(esp_event_base_t event_base, int32_t event_id, esp_event_handler_t event_handler, void *event_handler_arg, esp_event_handler_instance_t *instance);
 		esp_err_t esp_event_handler_instance_unregister(esp_event_base_t event_base, int32_t event_id, esp_event_handler_instance_t instance);
 		esp_err_t esp_wifi_set_config(wifi_interface_t interface, wifi_config_t *conf);
-
+		esp_err_t esp_wifi_set_ps(wifi_ps_type_t type);
 
 		// NETWORKING
 

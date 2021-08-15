@@ -353,6 +353,9 @@ namespace Briand {
 			return false;
 		}
 
+		// Disable powersave
+		esp_wifi_set_ps(WIFI_PS_NONE); 
+
 		// Set hostname if needed
 
 		if (ovverrideHostname.length() > 0) {
