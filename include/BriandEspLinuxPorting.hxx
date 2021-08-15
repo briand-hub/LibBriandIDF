@@ -467,6 +467,7 @@
 		} eTaskState;
 
 		typedef unsigned char StackType_t;
+		#define configSTACK_DEPTH_TYPE uint16_t
 
 		/*
 		*  Used with the uxTaskGetSystemState() function to return the state of each task in the system.
