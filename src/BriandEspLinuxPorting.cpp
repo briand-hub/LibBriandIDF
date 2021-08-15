@@ -227,6 +227,8 @@
 		BRIAND_TASK_POOL->push_back( tHandle );
 
 		t.detach(); // this will create daemon-like threads
+
+		return static_cast<BaseType_t>(BRIAND_TASK_POOL->size()-1); // task index
 	}
 
 	void vTaskDelete(TaskHandle_t handle) {
