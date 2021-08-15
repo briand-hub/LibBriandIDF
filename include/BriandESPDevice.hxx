@@ -133,6 +133,34 @@ namespace Briand {
             rtc_clk_cpu_freq_mhz_to_config(MHz, &cpuConf);
             rtc_clk_cpu_freq_set_config(&cpuConf);
         }
+    
+        /**
+         * Returns informations about running tasks
+         * @return string containing task informations
+        */
+       unique_ptr<string> GetSystemTaskInfo() {
+            auto info = make_unique<string>();
+            auto nTask = uxTaskGetNumberOfTasks();
+            auto tArray = make_unique<TaskStatus_t[]>(nTask);
+            unsigned int ulTotalRunTime;
+            nTask = uxTaskGetSystemState(tArray.get(), nTask, &ulTotalRunTime);
+            info->append("#       Name        Min.Stack free    \n");
+            for (unsigned int i=0; i<nTask; i++) {
+                string temp = "";
+                temp.append(std::to_string(tArray[i].xTaskNumber));
+                while (temp.length() < 8) temp.append(" ");
+                info->append(temp);
+                temp.clear();
+                if (tArray[i].pcTaskName != NULL) temp.append(tArray[i].pcTaskName);
+                while (temp.length() < 12) temp.append(" ");
+                info->append(temp);
+                temp.clear();
+                info->append(to_string(tArray[i].usStackHighWaterMark));
+                info->append("\n");
+            }
+
+            return std::move(info);
+        }
     };
 }
 

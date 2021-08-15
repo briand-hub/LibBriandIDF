@@ -249,6 +249,30 @@
 		}
 	}
 
+	UBaseType_t uxTaskGetNumberOfTasks() {
+		if (BRIAND_TASK_POOL == nullptr) return 0;
+		return static_cast<UBaseType_t>(BRIAND_TASK_POOL->size());
+	}
+
+	UBaseType_t uxTaskGetSystemState( TaskStatus_t * const pxTaskStatusArray, const UBaseType_t uxArraySize, uint32_t * const pulTotalRunTime ) {
+		if (uxArraySize == 0) return 0;
+		if (pulTotalRunTime != NULL) *pulTotalRunTime = 0;
+		if (BRIAND_TASK_POOL != nullptr && pxTaskStatusArray != NULL) {
+			unsigned int max = (uxArraySize < BRIAND_TASK_POOL->size() ? uxArraySize : BRIAND_TASK_POOL->size());
+			for (unsigned int i=0; i<max; i++) {
+				bzero(&pxTaskStatusArray[i], sizeof(TaskStatus_t));
+				pxTaskStatusArray[i].xTaskNumber = BRIAND_TASK_POOL->at(i)->thread_id;
+				pxTaskStatusArray[i].pcTaskName = BRIAND_TASK_POOL->at(i)->name.c_str();
+				//
+				// TODO : calculate phtread stack size
+				//
+				pxTaskStatusArray[i].usStackHighWaterMark = 0;
+				return max;
+			}
+		}
+		return 0;
+	}
+
 	esp_err_t nvs_flash_init(void) { return ESP_OK; }
 	esp_err_t nvs_flash_erase(void) { return ESP_OK; }
 	unsigned int esp_random() {
