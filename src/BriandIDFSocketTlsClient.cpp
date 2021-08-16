@@ -593,6 +593,8 @@ namespace Briand {
 		printf("sizeof(this->tls_socket) = %zu\n", sizeof(this->tls_socket));
 		printf("sizeof(this->VERBOSE) = %zu\n", sizeof(this->VERBOSE));
 		printf("sizeof(this->_socket) = %zu\n", sizeof(this->_socket));
+
+		printf("TOTAL = %zu\n", this->GetObjectSize());
 	}
 
 }

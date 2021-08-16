@@ -303,6 +303,8 @@ namespace Briand {
 		printf("sizeof(this->RECV_BUF_SIZE) = %zu\n", sizeof(this->RECV_BUF_SIZE));
 		printf("sizeof(this->VERBOSE) = %zu\n", sizeof(this->VERBOSE));
 		printf("sizeof(this->_socket) = %zu\n", sizeof(this->_socket));
+
+		printf("TOTAL = %zu\n", this->GetObjectSize());
 	}
 
 }

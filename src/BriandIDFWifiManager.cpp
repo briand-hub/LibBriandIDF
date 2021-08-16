@@ -756,6 +756,8 @@ namespace Briand {
 		printf("sizeof(this->STA_CONNECTED) = %zu\n", sizeof(this->STA_CONNECTED));
 		printf("sizeof(this->STA_IF_READY) = %zu\n", sizeof(this->STA_IF_READY));
 		printf("sizeof(this->VERBOSE) = %zu\n", sizeof(this->VERBOSE));
+
+		printf("TOTAL = %zu\n", this->GetObjectSize());
 	}
 
 }
