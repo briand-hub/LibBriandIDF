@@ -547,52 +547,16 @@ namespace Briand {
 		size_t oSize = 0;
 
 		oSize += sizeof(*this);
-		oSize += sizeof(this->cacert);
-		oSize += sizeof(this->caChainFailed);
-		oSize += sizeof(this->caChainLoaded);
 		oSize += sizeof(this->CLIENT_NAME) + sizeof(char)*this->CLIENT_NAME.size();
-		oSize += sizeof(this->conf);
-		oSize += sizeof(this->CONNECT_TIMEOUT_S);
-		oSize += sizeof(this->CONNECTED);
-		oSize += sizeof(this->ctr_drbg);
-		oSize += sizeof(this->entropy);
-		oSize += sizeof(this->ERR_BUF_SIZE);
-		oSize += sizeof(this->IO_TIMEOUT_S);
-		oSize += sizeof(this->min_rsa_key_size);
 		oSize += sizeof(this->personalization_string) + sizeof(unsigned char)*16;
-		oSize += sizeof(this->poll_timeout_s);
-		oSize += sizeof(this->RECV_BUF_SIZE);
-		oSize += sizeof(this->resourcesReady);
-		oSize += sizeof(this->ssl);
-		oSize += sizeof(this->tls_socket);
-		oSize += sizeof(this->VERBOSE);
-		oSize += sizeof(this->_socket);
 
 		return oSize;
 	}
 
 	void BriandIDFSocketTlsClient::PrintObjectSizeInfo() {
 		printf("sizeof(*this) = %zu\n", sizeof(*this));
-		printf("sizeof(this->cacert) = %zu\n", sizeof(this->cacert));
-		printf("sizeof(this->caChainFailed) = %zu\n", sizeof(this->caChainFailed));
-		printf("sizeof(this->caChainLoaded) = %zu\n", sizeof(this->caChainLoaded));
 		printf("sizeof(this->CLIENT_NAME) + sizeof(char)*this->CLIENT_NAME.size() = %zu\n", sizeof(this->CLIENT_NAME) + sizeof(char)*this->CLIENT_NAME.size());
-		printf("sizeof(this->conf) = %zu\n", sizeof(this->conf));
-		printf("sizeof(this->CONNECT_TIMEOUT_S) = %zu\n", sizeof(this->CONNECT_TIMEOUT_S));
-		printf("sizeof(this->CONNECTED) = %zu\n", sizeof(this->CONNECTED));
-		printf("sizeof(this->ctr_drbg) = %zu\n", sizeof(this->ctr_drbg));
-		printf("sizeof(this->entropy) = %zu\n", sizeof(this->entropy));
-		printf("sizeof(this->ERR_BUF_SIZE) = %zu\n", sizeof(this->ERR_BUF_SIZE));
-		printf("sizeof(this->IO_TIMEOUT_S) = %zu\n", sizeof(this->IO_TIMEOUT_S));
-		printf("sizeof(this->min_rsa_key_size) = %zu\n", sizeof(this->min_rsa_key_size));
 		printf("sizeof(this->personalization_string) + sizeof(unsigned char)*16 = %zu\n", sizeof(this->personalization_string) + sizeof(unsigned char)*16);
-		printf("sizeof(this->poll_timeout_s) = %zu\n", sizeof(this->poll_timeout_s));
-		printf("sizeof(this->RECV_BUF_SIZE) = %zu\n", sizeof(this->RECV_BUF_SIZE));
-		printf("sizeof(this->resourcesReady) = %zu\n", sizeof(this->resourcesReady));
-		printf("sizeof(this->ssl) = %zu\n", sizeof(this->ssl));
-		printf("sizeof(this->tls_socket) = %zu\n", sizeof(this->tls_socket));
-		printf("sizeof(this->VERBOSE) = %zu\n", sizeof(this->VERBOSE));
-		printf("sizeof(this->_socket) = %zu\n", sizeof(this->_socket));
 
 		printf("TOTAL = %zu\n", this->GetObjectSize());
 	}

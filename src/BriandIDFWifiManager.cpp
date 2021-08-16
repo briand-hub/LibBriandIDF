@@ -730,32 +730,14 @@ namespace Briand {
 		size_t oSize = 0;
 
 		oSize += sizeof(*this);
-		oSize += sizeof(this->AP_READY);
-		oSize += sizeof(this->currentConfig);
-		oSize += sizeof(this->initConfig);
-		oSize += sizeof(this->INITIALIZED);
 		oSize += sizeof(this->Instance) + (this->Instance != NULL ? sizeof(BriandIDFWifiManager) : 0);
-		oSize += sizeof(this->interfaceAP); // + (this->interfaceAP != NULL ? sizeof(*this->interfaceAP) : 0);
-		oSize += sizeof(this->interfaceSTA); // + (this->interfaceAP != NULL ? sizeof(*this->interfaceSTA) : 0);
-		oSize += sizeof(this->STA_CONNECTED);
-		oSize += sizeof(this->STA_IF_READY);
-		oSize += sizeof(this->VERBOSE);
 
 		return oSize;
 	}
 
 	void BriandIDFWifiManager::PrintObjectSizeInfo() {
 		printf("sizeof(*this) = %zu\n", sizeof(*this));
-		printf("sizeof(this->AP_READY) = %zu\n", sizeof(this->AP_READY));
-		printf("sizeof(this->currentConfig) = %zu\n", sizeof(this->currentConfig));
-		printf("sizeof(this->initConfig) = %zu\n", sizeof(this->initConfig));
-		printf("sizeof(this->INITIALIZED) = %zu\n", sizeof(this->INITIALIZED));
 		printf("sizeof(this->Instance) + (this->Instance != NULL ? sizeof(BriandIDFWifiManager) : 0) = %zu\n", sizeof(this->Instance) + (this->Instance != NULL ? sizeof(BriandIDFWifiManager) : 0));
-		printf("sizeof(this->interfaceAP) = %zu\n", sizeof(this->interfaceAP));
-		printf("sizeof(this->interfaceSTA) = %zu\n", sizeof(this->interfaceSTA));
-		printf("sizeof(this->STA_CONNECTED) = %zu\n", sizeof(this->STA_CONNECTED));
-		printf("sizeof(this->STA_IF_READY) = %zu\n", sizeof(this->STA_IF_READY));
-		printf("sizeof(this->VERBOSE) = %zu\n", sizeof(this->VERBOSE));
 
 		printf("TOTAL = %zu\n", this->GetObjectSize());
 	}
