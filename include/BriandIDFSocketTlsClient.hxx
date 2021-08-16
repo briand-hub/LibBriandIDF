@@ -19,6 +19,8 @@
 #include <memory>
 #include <vector>
 
+#include "BriandESPHeapOptimize.hxx"
+
 // Sockets
 #if defined(ESP_PLATFORM)
     #include <lwip/sys.h>
@@ -176,5 +178,10 @@ namespace Briand {
 		 * @return number of waiting bytes
 		*/
 		virtual size_t AvailableBytes();
+
+		/** Inherited from BriandESPHeapOptimize */
+		virtual void PrintObjectSizeInfo();
+		/** Inherited from BriandESPHeapOptimize */
+		virtual size_t GetObjectSize();
 	};
 }

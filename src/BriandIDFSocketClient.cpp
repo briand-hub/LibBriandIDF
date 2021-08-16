@@ -277,4 +277,32 @@ namespace Briand {
 		return this->_socket;
 	}
 	
+	size_t BriandIDFSocketClient::GetObjectSize() {
+		size_t oSize = 0;
+
+		oSize += sizeof(*this);
+		oSize += sizeof(this->CLIENT_NAME) + sizeof(char)*this->CLIENT_NAME.size();
+		oSize += sizeof(this->CONNECT_TIMEOUT_S);
+		oSize += sizeof(this->CONNECTED);
+		oSize += sizeof(this->IO_TIMEOUT_S);
+		oSize += sizeof(this->poll_timeout_s);
+		oSize += sizeof(this->RECV_BUF_SIZE);
+		oSize += sizeof(this->VERBOSE);
+		oSize += sizeof(this->_socket);
+
+		return oSize;
+	}
+
+	void BriandIDFSocketClient::PrintObjectSizeInfo() {
+		printf("sizeof(*this) = %zu\n", sizeof(*this));
+		printf("sizeof(this->CLIENT_NAME) + sizeof(char)*this->CLIENT_NAME.size() = %zu\n", sizeof(this->CLIENT_NAME) + sizeof(char)*this->CLIENT_NAME.size());
+		printf("sizeof(this->CONNECT_TIMEOUT_S) = %zu\n", sizeof(this->CONNECT_TIMEOUT_S));
+		printf("sizeof(this->CONNECTED) = %zu\n", sizeof(this->CONNECTED));
+		printf("sizeof(this->IO_TIMEOUT_S) = %zu\n", sizeof(this->IO_TIMEOUT_S));
+		printf("sizeof(this->poll_timeout_s) = %zu\n", sizeof(this->poll_timeout_s));
+		printf("sizeof(this->RECV_BUF_SIZE) = %zu\n", sizeof(this->RECV_BUF_SIZE));
+		printf("sizeof(this->VERBOSE) = %zu\n", sizeof(this->VERBOSE));
+		printf("sizeof(this->_socket) = %zu\n", sizeof(this->_socket));
+	}
+
 }

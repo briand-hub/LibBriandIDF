@@ -18,6 +18,8 @@
 #include <iostream>
 #include <memory>
 
+#include "BriandESPHeapOptimize.hxx"
+
 // Esp specific
 #if defined(ESP_PLATFORM)
     #include <esp_wifi.h>
@@ -34,7 +36,7 @@ namespace Briand
 	/**
 	 * This class is a simplified management for ESP IDF wifi interfaces
 	*/
-	class BriandIDFWifiManager {
+	class BriandIDFWifiManager : public BriandESPHeapOptimize {
 		private:
 
 		static BriandIDFWifiManager* Instance;
@@ -204,5 +206,11 @@ namespace Briand
 		 * @return true on success
 		*/
 		void SetStaIPv4DHCPClient(const bool& enabled);
+
+		/** Inherited from BriandESPHeapOptimize */
+		virtual void PrintObjectSizeInfo();
+		/** Inherited from BriandESPHeapOptimize */
+		virtual size_t GetObjectSize();
+
 	};
 }

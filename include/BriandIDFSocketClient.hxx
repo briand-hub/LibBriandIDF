@@ -19,6 +19,8 @@
 #include <memory>
 #include <vector>
 
+#include "BriandESPHeapOptimize.hxx"
+
 // Sockets
 #if defined(ESP_PLATFORM)
     #include <lwip/sys.h>
@@ -37,7 +39,7 @@ using namespace std;
 namespace Briand {
 
 	/** This class is a simple socket client (not SSL) */
-	class BriandIDFSocketClient {
+	class BriandIDFSocketClient : public BriandESPHeapOptimize {
 		private:
 
 		protected:
@@ -158,6 +160,11 @@ namespace Briand {
 		 * @return internal socket fd
 		*/
 		virtual int GetSocketDescriptor();
+
+		/** Inherited from BriandESPHeapOptimize */
+		virtual void PrintObjectSizeInfo();
+		/** Inherited from BriandESPHeapOptimize */
+		virtual size_t GetObjectSize();
 
 	};
 }
