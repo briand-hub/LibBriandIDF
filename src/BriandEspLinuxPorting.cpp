@@ -90,6 +90,8 @@
 	void rtc_clk_cpu_freq_mhz_to_config(uint32_t mhz, rtc_cpu_freq_config_t* out) { out->freq_mhz = mhz; }
 	void rtc_clk_cpu_freq_set_config(rtc_cpu_freq_config_t* info) { /* do nothing */ }
 
+	size_t heap_caps_get_largest_free_block(uint32_t caps) { return 0; }
+
 	wifi_mode_t BRIAND_CURRENT_WIFIMODE = WIFI_MODE_NULL;
 	const char* BRIAND_HOST = "localhost";
 
