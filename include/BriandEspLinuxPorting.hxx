@@ -249,6 +249,7 @@
 		void rtc_clk_cpu_freq_set_config(rtc_cpu_freq_config_t* info);
 
 		#define esp_get_free_heap_size() 320000
+		#define heap_caps_get_largest_free_block() 0
 
 
 		// WIFI FUNCTIONS
