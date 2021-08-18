@@ -86,7 +86,7 @@ namespace Briand {
 			esp_log_level_set("tcpip_adapter", ESP_LOG_NONE);
 			esp_log_level_set("esp_netif_lwip", ESP_LOG_NONE);
 			esp_log_level_set("device", ESP_LOG_NONE);
-			esp_log_level_set("dhcp4", ESP_LOG_NONE);
+			esp_log_level_set("dhcpc", ESP_LOG_NONE);
 		}
 		else {
 			esp_log_level_set("wifi", ESP_LOG_INFO);
@@ -97,7 +97,7 @@ namespace Briand {
 			esp_log_level_set("tcpip_adapter", ESP_LOG_INFO);
 			esp_log_level_set("esp_netif_lwip", ESP_LOG_INFO);
 			esp_log_level_set("device", ESP_LOG_INFO);
-			esp_log_level_set("dhcp4", ESP_LOG_INFO);
+			esp_log_level_set("dhcpc", ESP_LOG_INFO);
 		}
 	}
 
