@@ -81,9 +81,11 @@
 	*/
 
 	map<const char*, esp_log_level_t> LOG_LEVELS_MAP;
+	
 	void esp_log_level_set(const char* tag, esp_log_level_t level) {
 		LOG_LEVELS_MAP[tag] = level;
 	}
+
 	esp_log_level_t esp_log_level_get(const char* tag) {
 		auto it = LOG_LEVELS_MAP.find(tag);
 		

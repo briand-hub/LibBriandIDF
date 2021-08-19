@@ -228,12 +228,6 @@
 		#define ESP_LOGW(tag, _format, ...) { if(esp_log_level_get(tag) >= ESP_LOG_WARN) { printf("W "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
 
 		void ESP_ERROR_CHECK(esp_err_t e);
-
-		#define ESP_LOGI(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_INFO) { printf("I "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
-		#define ESP_LOGV(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_VERBOSE) { printf("V "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
-		#define ESP_LOGD(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_DEBUG) { printf("D "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
-		#define ESP_LOGE(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_ERROR) { printf("E "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
-		#define ESP_LOGW(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_WARN) { printf("W "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
 		
 
 		// FILESYSTEM FUNCTIONS
