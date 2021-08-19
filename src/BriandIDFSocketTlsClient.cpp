@@ -495,7 +495,7 @@ namespace Briand {
 				return std::move(data);
 			}
 
-			unsigned char buffer;
+			unsigned char buffer = 0x00;
 			ret = mbedtls_ssl_read(&this->ssl, &buffer, 1);
 
 			if(ret == MBEDTLS_ERR_SSL_WANT_WRITE) {

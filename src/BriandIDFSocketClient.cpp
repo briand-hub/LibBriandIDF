@@ -306,7 +306,7 @@ namespace Briand {
 
 			if (this->VERBOSE) printf("[%s] select() succeded.\n", this->CLIENT_NAME.c_str());
 
-			unsigned char buffer;
+			unsigned char buffer = 0x00;
 			receivedBytes = recv(this->_socket, &buffer, 1, 0);
 
 			if (receivedBytes == 0) {
