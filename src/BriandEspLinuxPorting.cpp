@@ -66,36 +66,29 @@
 		return "UNDEFINED ON LINUX PLATFORM";
 	}
 
-	/* OLD IMPLEMENTATION
-	esp_log_level_t BRIAND_CURRENT_LOG_LEVEL = ESP_LOG_NONE;
-
-	void esp_log_level_set(const char* tag, esp_log_level_t level) {
-		BRIAND_CURRENT_LOG_LEVEL = level;
-	}
-
-	esp_log_level_t esp_log_level_get(const char* tag) {
-		return BRIAND_CURRENT_LOG_LEVEL;
-	}
-
-	NEW IMPLEMENTATION:
-	*/
-
-	map<const char*, esp_log_level_t> LOG_LEVELS_MAP;
+	map<string, esp_log_level_t> LOG_LEVELS_MAP;
 	
 	void esp_log_level_set(const char* tag, esp_log_level_t level) {
-		LOG_LEVELS_MAP[tag] = level;
+		// If wildcard, all to level.
+		if (strcmp(tag, "*") == 0) {
+			for (auto it = LOG_LEVELS_MAP.begin(); it != LOG_LEVELS_MAP.end(); ++it) {
+				it->second = level;
+			}
+		}
+		else {
+			LOG_LEVELS_MAP[string(tag)] = level;
+		}
 	}
 
 	esp_log_level_t esp_log_level_get(const char* tag) {
-		auto it = LOG_LEVELS_MAP.find(tag);
+		auto it = LOG_LEVELS_MAP.find(string(tag));
 		
 		if (it == LOG_LEVELS_MAP.end()) {
-			// Create and return
-			LOG_LEVELS_MAP[tag] = ESP_LOG_NONE;
-			return ESP_LOG_NONE;
+			// Create
+			LOG_LEVELS_MAP[string(tag)] = ESP_LOG_NONE;
 		}
 		
-		return LOG_LEVELS_MAP[tag];
+		return LOG_LEVELS_MAP[string(tag)];
 	}
 
 	void ESP_ERROR_CHECK(esp_err_t e) { /* do nothing */ }
