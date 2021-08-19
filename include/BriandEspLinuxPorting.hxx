@@ -68,6 +68,7 @@
 		#include <iostream>
 		#include <memory>
 		#include <vector>
+		#include <map>
 		#include <cstdio>
 		#include <cstdlib>
 		#include <cstring>
@@ -199,6 +200,7 @@
 			ESP_LOG_VERBOSE     /*!< Bigger chunks of debugging information, or frequent messages which can potentially flood the output. */
 		} esp_log_level_t;
 
+		/* OLD IMPLEMENTATION
 		extern esp_log_level_t BRIAND_CURRENT_LOG_LEVEL;
 
 		void esp_log_level_set(const char* tag, esp_log_level_t level);
@@ -206,6 +208,28 @@
 		esp_log_level_t esp_log_level_get(const char* tag);
 
 		void ESP_ERROR_CHECK(esp_err_t e);
+
+		#define ESP_LOGI(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_INFO) { printf("I "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGV(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_VERBOSE) { printf("V "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGD(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_DEBUG) { printf("D "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGE(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_ERROR) { printf("E "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGW(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_WARN) { printf("W "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		
+		NEW IMPLEMENTATION:
+		*/
+
+		extern map<const char*, esp_log_level_t> LOG_LEVELS_MAP;
+		void esp_log_level_set(const char* tag, esp_log_level_t level);
+		esp_log_level_t esp_log_level_get(const char* tag);
+		#define ESP_LOGI(tag, _format, ...) { if(esp_log_level_get(tag) >= ESP_LOG_INFO) { printf("I "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGV(tag, _format, ...) { if(esp_log_level_get(tag) >= ESP_LOG_VERBOSE) { printf("V "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGD(tag, _format, ...) { if(esp_log_level_get(tag) >= ESP_LOG_DEBUG) { printf("D "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGE(tag, _format, ...) { if(esp_log_level_get(tag) >= ESP_LOG_ERROR) { printf("E "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+		#define ESP_LOGW(tag, _format, ...) { if(esp_log_level_get(tag) >= ESP_LOG_WARN) { printf("W "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
+
+		void ESP_ERROR_CHECK(esp_err_t e);
+
+		extern 
 
 		#define ESP_LOGI(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_INFO) { printf("I "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
 		#define ESP_LOGV(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_VERBOSE) { printf("V "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }

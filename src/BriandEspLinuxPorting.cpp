@@ -66,6 +66,7 @@
 		return "UNDEFINED ON LINUX PLATFORM";
 	}
 
+	/* OLD IMPLEMENTATION
 	esp_log_level_t BRIAND_CURRENT_LOG_LEVEL = ESP_LOG_NONE;
 
 	void esp_log_level_set(const char* tag, esp_log_level_t level) {
@@ -74,6 +75,25 @@
 
 	esp_log_level_t esp_log_level_get(const char* tag) {
 		return BRIAND_CURRENT_LOG_LEVEL;
+	}
+
+	NEW IMPLEMENTATION:
+	*/
+
+	map<const char*, esp_log_level_t> LOG_LEVELS_MAP;
+	void esp_log_level_set(const char* tag, esp_log_level_t level) {
+		LOG_LEVELS_MAP[tag] = level;
+	}
+	esp_log_level_t esp_log_level_get(const char* tag) {
+		auto it = LOG_LEVELS_MAP.find(tag);
+		
+		if (it == LOG_LEVELS_MAP.end()) {
+			// Create and return
+			LOG_LEVELS_MAP[tag] = ESP_LOG_NONE;
+			return ESP_LOG_NONE;
+		}
+		
+		return LOG_LEVELS_MAP[tag];
 	}
 
 	void ESP_ERROR_CHECK(esp_err_t e) { /* do nothing */ }
@@ -264,10 +284,10 @@
 		if (pulTotalRunTime != NULL) *pulTotalRunTime = 0;
 		if (BRIAND_TASK_POOL != nullptr && pxTaskStatusArray != NULL) {
 			unsigned int max = (uxArraySize < BRIAND_TASK_POOL->size() ? uxArraySize : BRIAND_TASK_POOL->size());
-			for (unsigned int i=0; i<max; i++) {
+			for (unsigned short i=0; i<max; i++) {
 				bzero(&pxTaskStatusArray[i], sizeof(TaskStatus_t));
 				pxTaskStatusArray[i].xTaskNumber = i;
-				pxTaskStatusArray[i].pcTaskName = BRIAND_TASK_POOL->at(i)->name.c_str();
+				pxTaskStatusArray[i].pcTaskName = &BRIAND_TASK_POOL->at(i)->name[0];
 				//
 				// TODO : calculate phtread stack size
 				//
