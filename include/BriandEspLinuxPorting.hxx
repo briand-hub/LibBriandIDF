@@ -229,8 +229,6 @@
 
 		void ESP_ERROR_CHECK(esp_err_t e);
 
-		extern 
-
 		#define ESP_LOGI(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_INFO) { printf("I "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
 		#define ESP_LOGV(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_VERBOSE) { printf("V "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
 		#define ESP_LOGD(tag, _format, ...) { if(BRIAND_CURRENT_LOG_LEVEL >= ESP_LOG_DEBUG) { printf("D "); printf(tag); printf(" "); printf(_format, ##__VA_ARGS__); } }
