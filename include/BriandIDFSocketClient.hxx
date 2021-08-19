@@ -27,8 +27,8 @@
 	#include <lwip/dns.h>
 	#include <lwip/sockets.h>
 	#include <lwip/netdb.h>
+	#include <sys/select.h>
 #elif defined(__linux__)
-	#include <sys/socket.h>
 	#include "BriandEspLinuxPorting.hxx"
 #else
     #error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
@@ -58,8 +58,8 @@ namespace Briand {
 		unsigned short RECV_BUF_SIZE;
 		/* Internal socket */
 		int _socket;
-		/* Poll operations timeout in seconds (default: 1 second) */
-		const unsigned char poll_timeout_s = 1;
+		/* Poll/Select operations timeout in seconds (default: 10 seconds) */
+		const unsigned char poll_default_timeout_s = 10;
 
 		/**
 		 * Method set default socket options (timeout, keepalive...)

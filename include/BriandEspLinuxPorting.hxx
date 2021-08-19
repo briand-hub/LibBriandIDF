@@ -87,6 +87,7 @@
 		#include <netdb.h>
 		#include <sys/ioctl.h>
 		#include <arpa/inet.h>
+		#include <sys/select.h>
 
 		// Sockets
 		#include <sys/socket.h>

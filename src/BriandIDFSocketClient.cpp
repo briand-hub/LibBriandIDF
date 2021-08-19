@@ -172,7 +172,7 @@ namespace Briand {
 		}
 
 		if (send(this->_socket, data->data(), data->size(), 0) < 0) {
-			if (this->VERBOSE) printf("[%s] Error on write.\n", this->CLIENT_NAME.c_str());
+			if (this->VERBOSE) printf("[%s] Error on send().\n", this->CLIENT_NAME.c_str());
 			return false;
 		}
 		
@@ -206,6 +206,7 @@ namespace Briand {
 		do {
 			// The following seems to resolve the long delay. 
 			// The blocking request for always RECV_BUF_SIZE seems to keep socket blocked until exactly recv_buf_size at most is read.
+
 			size_t remainingBytes = this->AvailableBytes();
 			int READ_SIZE = this->RECV_BUF_SIZE;
 			if (remainingBytes > 0 && remainingBytes < READ_SIZE)
@@ -213,7 +214,41 @@ namespace Briand {
 
 			auto recvBuffer = make_unique<unsigned char[]>(READ_SIZE);
 
+			// Before blocking socket, perform a select(), if timeout is not specified, a default 10 seconds will be used.
+			fd_set filter;
+			FD_ZERO(&filter);
+			FD_SET(this->_socket, &filter);
+			struct timeval timeout;
+			bzero(&timeout, sizeof(timeout));
+			timeout.tv_usec = 0;
+			timeout.tv_sec = ( this->IO_TIMEOUT_S > 0 ? this->IO_TIMEOUT_S : this->poll_default_timeout_s);
+			int selectResult = select(this->_socket+1, &filter, NULL, NULL, &timeout);
+
+			if (selectResult < 0) {
+				// An error occoured, select() failed.
+				if (this->VERBOSE) printf("[%s] select() failed.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
+			else if (selectResult == 0 && !FD_ISSET(this->_socket, &filter)) {
+				// An timeout occoured
+				if (this->VERBOSE) printf("[%s] select() timed out.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
+			else if (!FD_ISSET(this->_socket, &filter)) {
+				// No socket on the results!
+				if (this->VERBOSE) printf("[%s] select() error: no timeout but socket not ready.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
+
+			if (this->VERBOSE) printf("[%s] select() succeded.\n", this->CLIENT_NAME.c_str());
+
 			receivedBytes = recv(this->_socket, recvBuffer.get(), READ_SIZE, 0);
+
+			if (receivedBytes == 0) {
+				// If select() succeded but zero bytes are received, then exit / peer disconnected.
+				if (this->VERBOSE) printf("[%s] select() succeded, but zero bytes received. Peer disconnected.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
 
 			if (receivedBytes > 0) {
 				data->insert(data->end(), recvBuffer.get(), recvBuffer.get() + receivedBytes);
@@ -243,8 +278,42 @@ namespace Briand {
 		do {
 			//size_t remainingBytes = this->AvailableBytes();
 
+			// Before blocking socket, perform a select(), if timeout is not specified, a default 10 seconds will be used.
+			fd_set filter;
+			FD_ZERO(&filter);
+			FD_SET(this->_socket, &filter);
+			struct timeval timeout;
+			bzero(&timeout, sizeof(timeout));
+			timeout.tv_usec = 0;
+			timeout.tv_sec = ( this->IO_TIMEOUT_S > 0 ? this->IO_TIMEOUT_S : this->poll_default_timeout_s);
+			int selectResult = select(this->_socket+1, &filter, NULL, NULL, &timeout);
+
+			if (selectResult < 0) {
+				// An error occoured, select() failed.
+				if (this->VERBOSE) printf("[%s] select() failed.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
+			else if (selectResult == 0 && !FD_ISSET(this->_socket, &filter)) {
+				// An timeout occoured
+				if (this->VERBOSE) printf("[%s] select() timed out.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
+			else if (!FD_ISSET(this->_socket, &filter)) {
+				// No socket on the results!
+				if (this->VERBOSE) printf("[%s] select() error: no timeout but socket not ready.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
+
+			if (this->VERBOSE) printf("[%s] select() succeded.\n", this->CLIENT_NAME.c_str());
+
 			unsigned char buffer;
 			receivedBytes = recv(this->_socket, &buffer, 1, 0);
+
+			if (receivedBytes == 0) {
+				// If select() succeded but zero bytes are received, then exit / peer disconnected.
+				if (this->VERBOSE) printf("[%s] select() succeded, but zero bytes received. Peer disconnected.\n", this->CLIENT_NAME.c_str());
+				break;
+			}
 
 			// If stop char found, stop.
 			if (buffer == stop) {

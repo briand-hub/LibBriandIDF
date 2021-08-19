@@ -27,9 +27,9 @@
 	#include <lwip/dns.h>
 	#include <lwip/sockets.h>
 	#include <lwip/netdb.h>
+	#include <sys/select.h>
 #elif defined(__linux__)
 	#include "BriandEspLinuxPorting.hxx"
-	#include <sys/socket.h>
 #else
     #error "UNSUPPORTED PLATFORM (ESP32 OR LINUX REQUIRED)"
 #endif
