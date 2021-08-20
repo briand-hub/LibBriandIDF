@@ -2,6 +2,207 @@
 
 C++17 Utility library for ESP32 IDF Framework. Built with PlatformIO and IDF v4.2 (latest stable).
 
+## Features
+
+* **SPI RAM** Support (since version 1.4)
+* Helper easy to use functions for memory
+* **Wi-Fi Management** object for Station or Access Point
+* **Easy** to use **socket client**
+* **Easy** to use **SSL socket client** 
+* Enables compiling **ESP projects in Linux** for debugging/testing (*warning: not all esp functions are covered!*)
+
+## NEW REALEASE WITH ESP32-WROVER and ESP32-S2 SUPPORT (SPI RAM UP TO 8MB) Full PSram/SPIRAM support with operator new()
+
+This release enables SPIRAM management and makes heap allocatable with heap_caps functions, malloc and new operator.
+
+### Set-up
+
+Following instructions are valid for PlatformIO/VSCode environment. For any other environment, check specific instructions.
+
+In order to get it working, add (or edit) the platformio.ini file as follows (choose one env or multiple, your choice):
+
+```ini
+
+[env:lolin_d32]
+board = lolin_d32			; Use this for the classic ESP32 module
+board_build.mcu = esp32		; WARNING: use the right chip there!
+framework = espidf
+platform = espressif32
+monitor_speed = 115200
+upload_speed = 921600
+;Enable C++17 (must be enabled also in .vscode/c_cpp_properties.json by setting "cppStandard": "c++17")
+build_unflags = -fno-exceptions -std=gnu++11
+build_flags = -fexceptions -std=gnu++17
+
+[env:esp-wrover-kit]
+board = esp-wrover-kit		; Use this for the WRover ESP32 (contains 8MB PSram)
+board_build.mcu = esp32s2	; WARNING: use the right chip there! (esp32 or esp32s2)
+framework = espidf
+platform = espressif32
+monitor_speed = 115200
+upload_speed = 921600
+;Enable C++17 (must be enabled also in .vscode/c_cpp_properties.json by setting "cppStandard": "c++17")
+build_unflags = -fno-exceptions -std=gnu++11
+build_flags = -fexceptions -std=gnu++17
+
+[env:esp32-s2-saola-1]
+platform = espressif32
+board = esp32-s2-saola-1board
+framework = espidf
+platform = espressif32
+monitor_speed = 115200
+upload_speed = 921600
+;Enable C++17 (must be enabled also in .vscode/c_cpp_properties.json by setting "cppStandard": "c++17")
+build_unflags = -fno-exceptions -std=gnu++11
+build_flags = -fexceptions -std=gnu++17
+
+```
+
+**Remember to enable SPIRAM support on menuconfig:**
+
+```
+Component config -> ESP32 (or ESP32S2) Specific -> Support for external, SPI-connected RAM = ENABLED
+Component config -> ESP32 (or ESP32S2) Specific -> Support for external, SPI-connected RAM -> SPI RAM config ->
+	Initialize SPI RAM during startup = ENABLED
+		Ignore PSRAM when not found = ENABLED
+	SPI RAM access method = Make RAM allocatable using malloc() as well
+```
+
+The last setting will enable to use, with no restriction, malloc() or new() or make_unique() operatos.
+
+**Remember to enable C+117 (see below).**
+
+### Sample code
+
+```C++
+
+#include <iostream>
+#include <memory>
+#include <vector>
+
+#include "BriandESPDevice.hxx"
+
+// Required for C++ use WITH IDF!
+extern "C" {
+	void app_main();
+}
+
+void app_main() {
+	cout << "SYS INFO ----------------" << endl;
+
+	cout << "Freq: " << Briand::BriandESPDevice::GetCpuFreqMHz() << endl;
+
+	Briand::BriandESPDevice::PrintMemoryStatus();
+
+	const size_t MAX = 900000;
+
+	cout << "HEAP CAPS MALLOC TEST of 900.000 bytes" << endl;
+
+	auto temp3 = (char*)heap_caps_malloc(MAX*sizeof(char), MALLOC_CAP_SPIRAM);
+	cout << "NOT Allocated? " << (temp3 == NULL) << endl;
+	if (temp3 != NULL) {
+		for (size_t i=0; i<MAX; i++) temp3[i] = 0xA0;
+		cout << "Written." << endl;
+		Briand::BriandESPDevice::PrintMemoryStatus();
+		free(temp3);
+	}
+
+	cout << endl << "MALLOC TEST of 900.000 bytes" << endl;
+
+	auto temp = (char*)malloc(MAX*sizeof(char));
+	cout << "NOT Allocated? " << (temp == NULL) << endl;
+	if (temp != NULL) {
+		for (size_t i=0; i<MAX; i++) temp[i] = 0xA0;
+		cout << "Written." << endl;
+		Briand::BriandESPDevice::PrintMemoryStatus();
+		free(temp);
+	}
+
+	cout << endl << "C++ Pointer Alloc TEST of 900.000 bytes" << endl;
+
+	auto temp2 = make_unique<char[]>(MAX);
+	cout << "NOT Allocated? " << (temp2 == nullptr) << endl;
+	if (temp2 != NULL) {
+		for (size_t i=0; i<MAX; i++) temp2[i] = 0xA0;
+		cout << "Written." << endl;
+		Briand::BriandESPDevice::PrintMemoryStatus();
+		temp2.reset();
+	}
+
+	cout << "-------------------------" << endl;
+}
+
+```
+
+### Output WITHOUT SPIRAM: (all platforms tested ESP32, ESP32-Wrover withour, ESP32-S2):
+
+**WARNING: with C++ make_unique call ESP will crash!**
+
+```
+Heap total size: 345800
+Heap total free: 322468
+SPIRAM Size: 0
+SPIRAM Free: 0
+Internal Size: 345800
+Internal Free: 322468
+MAX SPI allocatable: 0
+HEAP CAPS MALLOC TEST of 900.000 bytes
+
+NOT Allocated? 1
+MALLOC TEST of 900.000 bytes
+
+NOT Allocated? 1
+C++ Pointer Alloc TEST of 900.000 bytes
+
+
+abort() was called at PC 0x401502df on core 0
+```
+
+### Output with 8MB SPI RAM: (with all platforms ESP32, ESP32-Wrover withour, ESP32-S2):
+
+```
+Heap total size: 8641574
+Heap total free: 7280562
+SPIRAM Size: 8386191
+SPIRAM Free: 7075471
+Internal Size: 255383
+Internal Free: 205091
+MAX SPI allocatable: 4194304
+
+HEAP CAPS MALLOC TEST of 900.000 bytes
+NOT Allocated? 0
+Written.
+Heap total size: 8641574
+Heap total free: 6380562
+SPIRAM Size: 8386191
+SPIRAM Free: 6175471
+Internal Size: 255383
+Internal Free: 205091
+MAX SPI allocatable: 4194304
+
+MALLOC TEST of 900.000 bytes
+NOT Allocated? 0
+Written.
+Heap total size: 8641574
+Heap total free: 6380562
+SPIRAM Size: 8386191
+SPIRAM Free: 6175471
+Internal Size: 255383
+Internal Free: 205091
+MAX SPI allocatable: 4194304
+
+C++ Pointer Alloc TEST of 900.000 bytes
+NOT Allocated? 0
+Written.
+Heap total size: 8641574
+Heap total free: 6380562
+SPIRAM Size: 8386191
+SPIRAM Free: 6175471
+Internal Size: 255383
+Internal Free: 205091
+MAX SPI allocatable: 4194304
+```
+
 ## NEW RELEASE WITH LINUX PORTING
 
 A new release (1.1) has a Makefile and could be compiled under Linux environment for any testing.

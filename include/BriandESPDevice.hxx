@@ -21,8 +21,14 @@
 #if defined(ESP_PLATFORM)
     #include <sdkconfig.h>
     #include <esp_heap_caps.h>
-    #include <esp32/spiram.h>
-    #include <esp32/himem.h>
+    // Fixes header files between IDF versions and configuration file.
+    #if __has_include(<esp32/spiram.h>)
+        #include <esp32/spiram.h>
+    #elif __has_include(<esp_spiram.h>)
+        #include <esp_spiram.h>
+    #else
+        #error "NO REQUIRED HEADER FOR SPIRAM (either esp_spiram.h or esp32/spiram.h). CHECK CONFIG FILE TO ENABLE SUPPORT FOR SPIRAM!"
+    #endif
     #include <freertos/task.h>
     #include <hal/cpu_hal.h>
     #include <soc/rtc.h>
@@ -42,75 +48,73 @@ namespace Briand {
     class BriandESPDevice {
         public:
 
-        // Enable only if SDKCONFIG spiram is enabled
-
-        //
-        // TODO: resolve linker error undefined reference to `esp_spiram_init_cache()
-        //
-        
-        //#ifdef CONFIG_SPIRAM
-        #ifdef BRIAND_DISABLE
-
-            static void PSramInit() {
-                esp_spiram_init();
-            }
-
-            static bool HasPSram() {
-                esp_spiram_init_cache();
-                if (!esp_spiram_test()) {
-                    return false;
-                }
-                if (esp_spiram_add_to_heapalloc() != ESP_OK) {
-                    return false;
-                }
-
-                return true;
-            }
-
-            /**
-             * Returns total PSram if available
-            */
-            static unsigned long GetPsramSize()
-            {
-                if(HasPSram()){
-                    multi_heap_info_t info;
-                    heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
-                    return info.total_free_bytes + info.total_allocated_bytes;
-                }
-
-                return 0;
-            }
-
-            /**
-             * Returns free PSram if available
-            */
-            static unsigned long GetFreePsram()
-            {
-                if(HasPSram()){
-                    return heap_caps_get_free_size(MALLOC_CAP_SPIRAM);
-                }
-
-                return 0;
-            }
-
-        #endif
+        /**
+         * Returns total SPIRAM size in bytes
+        */
+        static size_t GetSPIRAMSize() {
+            multi_heap_info_t info;
+            heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+            return info.total_free_bytes + info.total_allocated_bytes;
+        }
 
         /**
-         * Returns total heap size
+         * Returns free SPIRAM size in bytes
         */
-        static unsigned long GetHeapSize() {
+        static size_t GetFreeSPIRAM() {
+            multi_heap_info_t info;
+            heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+            return info.total_free_bytes;
+        }
+
+        /**
+         * Returns total INTERNAL RAM size in bytes
+        */
+        static size_t GetBoardRAMSize() {
             multi_heap_info_t info;
             heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
             return info.total_free_bytes + info.total_allocated_bytes;
         }
 
         /**
-         * Returns free heap size
+         * Returns free INTERNAL size in bytes
         */
-        static unsigned long GetFreeHep() {
+        static size_t GetFreeBoardRAM() {
             multi_heap_info_t info;
             heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
             return info.total_free_bytes;
+        }
+
+        /**
+         * Returns true if SPIRAM detected
+        */
+        static bool HasSPIRAM() {
+            return GetSPIRAMSize() > 0;
+        }
+
+        /**
+         * Returns total heap size (includes SPI SRAM)
+        */
+        static size_t GetHeapSize() {
+            size_t tot = 0;
+            multi_heap_info_t info;
+            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+            tot += info.total_free_bytes + info.total_allocated_bytes;
+            heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+            tot += info.total_free_bytes + info.total_allocated_bytes;
+            return tot;
+        }
+
+        /**
+         * Returns free heap size (includes SPI SRAM)
+        */
+        static size_t GetFreeHeap() {
+            size_t tot = 0;
+            multi_heap_info_t info;
+            heap_caps_get_info(&info, MALLOC_CAP_INTERNAL);
+            tot += info.total_free_bytes;
+            heap_caps_get_info(&info, MALLOC_CAP_SPIRAM);
+            tot += info.total_free_bytes;
+            return tot;
         }
 
         /**
@@ -162,6 +166,20 @@ namespace Briand {
 
             return std::move(info);
         }
+    
+        /**
+         * Prints out the memory status
+        */
+        static void PrintMemoryStatus() {
+            cout << "Heap total size: " << Briand::BriandESPDevice::GetHeapSize() << endl;
+            cout << "Heap total free: " << Briand::BriandESPDevice::GetFreeHeap() << endl;
+            cout << "SPIRAM Size: " << Briand::BriandESPDevice::GetSPIRAMSize() << endl;
+            cout << "SPIRAM Free: " << Briand::BriandESPDevice::GetFreeSPIRAM() << endl;
+            cout << "Internal Size: " << Briand::BriandESPDevice::GetBoardRAMSize() << endl;
+            cout << "Internal Free: " << Briand::BriandESPDevice::GetFreeBoardRAM() << endl;
+            cout << "MAX SPI allocatable: " << heap_caps_get_largest_free_block(MALLOC_CAP_SPIRAM) << endl;
+            cout << "MAX Internal allocatable: " << heap_caps_get_largest_free_block(MALLOC_CAP_INTERNAL) << endl;
+       }
     };
 }
 
