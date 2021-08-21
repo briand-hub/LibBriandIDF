@@ -225,7 +225,7 @@
 		// Should return microseconds!
 		auto clockPrecision = std::chrono::system_clock::now().time_since_epoch();
 		auto micros = std::chrono::duration_cast<std::chrono::microseconds>(clockPrecision);
-		return micros.duration(); 
+		return micros.count(); 
 	}
 
 	BaseType_t xTaskCreate(
