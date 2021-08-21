@@ -14,11 +14,23 @@
 		"email": "brian_d@tutanota.com",
 		"url": "https://www.github.com/briand-hub"
 	},
-	"license": "GPL3",
+	"license": "GPL-3.0-only",
 	"frameworks": ["espidf"],
 	"platforms": ["espressif32"],
 	"build": {
 		"unflags": ["-fno-exceptions", "-std=gnu++11"],
 		"flags": ["-fexceptions", "-std=gnu++17"]
+	},
+	"export": {
+		"include": [
+			"include/*.hxx",
+			"src/*.cpp",
+			"LICENSE",
+			"Makefile",
+			"README.md"
+		],
+		"exclude": [
+			"src/main.cpp"
+		]
 	}
 }

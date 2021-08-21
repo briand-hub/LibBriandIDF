@@ -278,6 +278,11 @@ lib_deps = https://github.com/briand-hub/LibBriandIDF
 Or, for specific version:
 
 ```ini
+lib_deps = https://github.com/briand-hub/LibBriandIDF@1.4.0
+```
+
+
+```ini
 lib_deps = https://github.com/briand-hub/LibBriandIDF@1.0.0
 ```
 
