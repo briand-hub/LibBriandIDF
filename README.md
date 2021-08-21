@@ -2,6 +2,8 @@
 
 C++17 Utility library for ESP32 IDF Framework. Built with PlatformIO and IDF v4.2 (latest stable).
 
+**PlatformIO Package available!**
+
 ## Features
 
 * **SPI RAM** Support (since version 1.4)
