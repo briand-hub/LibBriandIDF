@@ -221,7 +221,12 @@
 		std::this_thread::sleep_for( std::chrono::milliseconds(delay) ); 
 	}
 
-	uint64_t esp_timer_get_time() { return (uint64_t)time(NULL); }
+	uint64_t esp_timer_get_time() { 
+		// Should return microseconds!
+		auto clockPrecision = std::chrono::system_clock::now().time_since_epoch();
+		auto micros = std::chrono::duration_cast<std::chrono::microseconds>(clockPrecision);
+		return micros.duration(); 
+	}
 
 	BaseType_t xTaskCreate(
 			TaskFunction_t pvTaskCode,
