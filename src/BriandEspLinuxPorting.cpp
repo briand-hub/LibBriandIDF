@@ -283,7 +283,7 @@
 		if (uxArraySize == 0) return 0;
 		if (pulTotalRunTime != NULL) *pulTotalRunTime = 0;
 		if (BRIAND_TASK_POOL != nullptr && pxTaskStatusArray != NULL) {
-			unsigned int max = (uxArraySize < BRIAND_TASK_POOL->size() ? uxArraySize : BRIAND_TASK_POOL->size());
+			UBaseType_t max = (uxArraySize < static_cast<UBaseType_t>(BRIAND_TASK_POOL->size()) ? uxArraySize :  static_cast<UBaseType_t>(BRIAND_TASK_POOL->size()));
 			for (unsigned short i=0; i<max; i++) {
 				bzero(&pxTaskStatusArray[i], sizeof(TaskStatus_t));
 				pxTaskStatusArray[i].xTaskNumber = i;
