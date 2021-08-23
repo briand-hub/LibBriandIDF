@@ -529,6 +529,24 @@
 		UBaseType_t uxTaskGetNumberOfTasks();
 		UBaseType_t uxTaskGetSystemState( TaskStatus_t * const pxTaskStatusArray, const UBaseType_t uxArraySize, uint32_t * const pulTotalRunTime );
 
+
+		// ESP PTHREADS
+
+		/** pthread configuration structure that influences pthread creation */
+		typedef struct {
+			size_t stack_size;  ///< The stack size of the pthread
+			size_t prio;        ///< The thread's priority
+			bool inherit_cfg;   ///< Inherit this configuration further
+			const char* thread_name;  ///< The thread name.
+			int pin_to_core;    ///< The core id to pin the thread to. Has the same value range as xCoreId argument of xTaskCreatePinnedToCore.
+		} esp_pthread_cfg_t;
+
+		esp_pthread_cfg_t esp_pthread_get_default_config(void);
+		esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg);
+		esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p);
+		esp_err_t esp_pthread_init(void);
+		
+
 		// MISC
 
 		esp_err_t nvs_flash_init(void);

@@ -209,7 +209,7 @@
 	}
 
 	BriandIDFPortingTaskHandle::~BriandIDFPortingTaskHandle() {
-		cout << "BriandIDFPortingTaskHandle: " << this->name << " destroyed." << endl;
+		if (esp_log_level_get("ESPLinuxPorting") != ESP_LOG_NONE) cout << "BriandIDFPortingTaskHandle: " << this->name << " destroyed." << endl;
 	}
 
 	unique_ptr<vector<TaskHandle_t>> BRIAND_TASK_POOL = nullptr;
@@ -304,6 +304,31 @@
 		return static_cast<unsigned int>(rand());
 	}
 
+	esp_pthread_cfg_t esp_pthread_get_default_config(void) {
+		// Like the default configuration
+		esp_pthread_cfg_t defaults;
+		defaults.stack_size = 2048;
+		defaults.inherit_cfg = false;
+		defaults.pin_to_core = 0;
+		defaults.prio = 5;
+		defaults.thread_name = "pthread";
+		return defaults;
+	}
+
+	esp_err_t esp_pthread_set_cfg(const esp_pthread_cfg_t *cfg) {
+		// do nothing
+		return ESP_OK;
+	}
+
+	esp_err_t esp_pthread_get_cfg(esp_pthread_cfg_t *p) {
+		if (p != NULL) *p = esp_pthread_get_default_config();
+		return ESP_OK;
+	}
+
+	esp_err_t esp_pthread_init(void) {
+		// do nothing
+		return ESP_OK;
+	}
 
 	// app_main() early declaration with extern keyword so will be found
 	extern "C" { void app_main(); }
@@ -318,8 +343,11 @@
 		// srand for esp_random()
 		srand(time(NULL));
 
+		// Add this to the logging utils in order to deactivate output if necessary
+		esp_log_level_set("ESPLinuxPorting", ESP_LOG_NONE);
+
 		// Save this thread id
-		cout << "MAIN ID: " << std::this_thread::get_id() << endl;
+		cout << "MAIN THREAD ID: " << std::this_thread::get_id() << endl;
 
 		// Attach Ctrl-C event handler
 		sighandler_t oldHandler = signal(SIGINT, sig_hnd_Ctrl_C);
@@ -331,10 +359,12 @@
 		BRIAND_TASK_POOL = make_unique<vector<TaskHandle_t>>();
 		
 		cout << "main() Pool started. Use Ctrl-C to terminate" << endl;
+		
 		cout << "Starting app_main()" << endl;
+
 		app_main(); // This must not be a thread because it terminates!
 
-		cout << "main(): Pool started. Use Ctrl-C to terminate" << endl;
+		cout << "app_main() started." << endl;
 
 		while(!CTRL_C_EVENT_SET) { 
 			// Check if any instanced thread should be terminated
@@ -344,7 +374,7 @@
 					pthread_cancel(BRIAND_TASK_POOL->at(i)->handle);
 					delete BRIAND_TASK_POOL->at(i);
 					BRIAND_TASK_POOL->erase(BRIAND_TASK_POOL->begin() + i);
-					cout << "Thread #" << i << "(" << tname << ") killed" << endl;
+					if (esp_log_level_get("ESPLinuxPorting") != ESP_LOG_NONE) cout << "Thread #" << i << "(" << tname << ") killed" << endl;
 				}
 			}
 				
