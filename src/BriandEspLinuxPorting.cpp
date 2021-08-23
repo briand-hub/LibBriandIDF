@@ -292,10 +292,9 @@
 				// TODO : calculate phtread stack size
 				//
 				pxTaskStatusArray[i].usStackHighWaterMark = 0;
-				return max;
 			}
 		}
-		return 0;
+		return max;
 	}
 
 	esp_err_t nvs_flash_init(void) { return ESP_OK; }
