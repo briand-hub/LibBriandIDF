@@ -287,7 +287,7 @@
 			for (unsigned short i=0; i<max; i++) {
 				bzero(&pxTaskStatusArray[i], sizeof(TaskStatus_t));
 				pxTaskStatusArray[i].xTaskNumber = i;
-				pxTaskStatusArray[i].pcTaskName = &BRIAND_TASK_POOL->at(i)->name[0];
+				pxTaskStatusArray[i].pcTaskName = BRIAND_TASK_POOL->at(i)->name.c_str();
 				//
 				// TODO : calculate phtread stack size
 				//
