@@ -362,8 +362,8 @@ namespace Briand {
 
 	void BriandIDFSocketTlsClient::Disconnect() {
 		if (this->CONNECTED) {
-			mbedtls_ssl_close_notify(&this->ssl);
 			this->CONNECTED = false;
+			mbedtls_ssl_close_notify(&this->ssl);
 			this->_socket = -1;
 			if (this->VERBOSE) printf("[%s] Disconnected.\n", this->CLIENT_NAME.c_str());
 		}
@@ -535,9 +535,28 @@ namespace Briand {
 		size_t bytes_avail = 0;
 
 		if (this->CONNECTED) {
-			// Call a read without buffer (does not download data)
-			mbedtls_ssl_read(&this->ssl, NULL, 0);
-			bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
+			// Perform a select() to avoid concurrent ssl reads error (valgrind signals an invalid read size)
+			fd_set filter;
+			FD_ZERO(&filter);
+			FD_SET(this->_socket, &filter);
+			struct timeval timeout;
+			bzero(&timeout, sizeof(timeout));
+			timeout.tv_usec = 0;
+			timeout.tv_sec = ( this->IO_TIMEOUT_S > 0 ? this->IO_TIMEOUT_S : this->poll_default_timeout_s);
+			int selectResult = select(this->_socket+1, &filter, NULL, NULL, &timeout);
+
+			if (selectResult < 0) {
+				// Error on select
+				if (this->VERBOSE)  printf("[%s] select() failed.\n", this->CLIENT_NAME.c_str());
+				return bytes_avail;
+			}
+
+			// If still connected, read
+			if (this->CONNECTED) {
+				// Call a read without buffer (does not download data)
+				mbedtls_ssl_read(&this->ssl, NULL, 0);
+				bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
+			}
 		}
 		
 		return bytes_avail;
