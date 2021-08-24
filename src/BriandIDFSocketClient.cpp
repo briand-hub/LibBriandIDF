@@ -104,6 +104,7 @@ namespace Briand {
 
 		if(connect(this->_socket, address.ai_addr, address.ai_addrlen) != 0) {
 			if (this->VERBOSE) printf("[%s] Socket connection failed, errno = %d\n", this->CLIENT_NAME.c_str(), errno);
+			shutdown(this->_socket, SHUT_RDWR);
 			close(this->_socket);
 			return false;
 		}
@@ -157,6 +158,7 @@ namespace Briand {
 
 	void BriandIDFSocketClient::Disconnect() {
 		if (this->CONNECTED) {
+			shutdown(this->_socket, SHUT_RDWR);
 			close(this->_socket);
 			this->CONNECTED = false;
 			if (this->VERBOSE) printf("[%s] Disconnected.\n", this->CLIENT_NAME.c_str());
