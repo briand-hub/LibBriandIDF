@@ -115,8 +115,8 @@ namespace Briand {
 		if (this->CONNECTED) this->Disconnect();
 		this->caChainLoaded = false;
 		this->caChainFailed = true;
-		this->_socket = -1;
 		if (this->resourcesReady) {
+			this->resourcesReady = false;
 			mbedtls_net_free(&this->tls_socket);
 			mbedtls_ssl_free(&this->ssl);
 			mbedtls_ssl_config_free(&this->conf);
@@ -124,7 +124,7 @@ namespace Briand {
 			mbedtls_ctr_drbg_free(&this->ctr_drbg);
 			mbedtls_entropy_free(&this->entropy);
 		}	
-		this->resourcesReady = false;
+		this->_socket = -1;
 	}
 
 	void BriandIDFSocketTlsClient::SetTimeout(const unsigned short& connectTimeout_s, const unsigned short& ioTimeout_s) {
@@ -553,8 +553,9 @@ namespace Briand {
 
 			// If still connected, read
 			if (this->CONNECTED) {
-				// Call a read without buffer (does not download data)
-				mbedtls_ssl_read(&this->ssl, NULL, 0);
+				unsigned char temp;
+				// Call a zero-size read
+				mbedtls_ssl_read(&this->ssl, &temp, 0);
 				bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
 			}
 		}
