@@ -535,7 +535,8 @@ namespace Briand {
 		size_t bytes_avail = 0;
 
 		if (this->CONNECTED) {
-			// Perform a select() to avoid concurrent ssl reads error (valgrind signals an invalid read size)
+			/* select() here with mbedtls is a BAD idea: results show a really long delay
+			// Perform a select() 
 			fd_set filter;
 			FD_ZERO(&filter);
 			FD_SET(this->_socket, &filter);
@@ -550,13 +551,11 @@ namespace Briand {
 				if (this->VERBOSE)  printf("[%s] select() failed.\n", this->CLIENT_NAME.c_str());
 				return bytes_avail;
 			}
+			*/
 
-			// If still connected, read
-			if (this->CONNECTED) {
-				// Call a zero-size read
-				mbedtls_ssl_read(&this->ssl, NULL, 0);
-				bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
-			}
+			// Call a zero-size read
+			mbedtls_ssl_read(&this->ssl, NULL, 0);
+			bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
 		}
 		
 		return bytes_avail;
