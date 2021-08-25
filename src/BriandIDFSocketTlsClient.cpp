@@ -553,9 +553,8 @@ namespace Briand {
 
 			// If still connected, read
 			if (this->CONNECTED) {
-				unsigned char temp;
 				// Call a zero-size read
-				mbedtls_ssl_read(&this->ssl, &temp, 0);
+				mbedtls_ssl_read(&this->ssl, NULL, 0);
 				bytes_avail = mbedtls_ssl_get_bytes_avail(&this->ssl);
 			}
 		}
