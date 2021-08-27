@@ -1,8 +1,8 @@
 {
 	"name": "LibBriandIDF",
-	"version": "1.4.0",
-	"description": "C++17 Utility library for ESP32 IDF Framework. Contains porting IDF to Linux since v1.1",
-  	"keywords": "idf, esp32, espressif, mbedtls",
+	"version": "1.5.0",
+	"description": "C++17 Utility library for ESP32 IDF Framework. Contains socket client, SSL client, WiFi manager and other utilities, including IDF porting for Linux.",
+  	"keywords": "idf, esp32, espressif, mbedtls, espressif, linux porting, c++17, socket client, ssl client, wifi",
 	"repository":
 	{
 		"type": "git",
@@ -30,7 +30,8 @@
 			"README.md"
 		],
 		"exclude": [
-			"src/main.cpp"
+			"src/main.cpp",
+			"*.tar.gz"
 		]
 	}
 }

@@ -11,3 +11,4 @@ sdkconfig.old
 src/main.cpp
 partitions.csv
 main_linux_exe
+*.tar.gz
