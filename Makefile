@@ -5,7 +5,7 @@ INCLUDEPATH = include/
 OUTNAME = main_linux_exe
 
 CC = g++
-CFLAGS = -g -fpermissive -pthread -lmbedtls -lmbedcrypto -lmbedx509 -lsodium -std=gnu++17
+CFLAGS = -g -pthread -lmbedtls -lmbedcrypto -lmbedx509 -lsodium -std=gnu++17
 
 
 main:

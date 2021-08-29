@@ -39,7 +39,7 @@
 	OUTNAME = main_linux_exe
 
 	CC = g++
-	CFLAGS = -g -fpermissive -pthread -lmbedtls -lmbedcrypto -lsodium -std=gnu++17
+	CFLAGS = -g -pthread -lmbedtls -lmbedcrypto -lsodium -std=gnu++17
 
 
 	main:
@@ -51,10 +51,9 @@
  *  
  * 	USE THE INCLUDED Makefile!
  * 
- *  g++ -o main main.cpp -I../include/ -lmbedtls -llibsodium -lmbedcrypto -pthread -fpermissive
+ *  g++ -o main main.cpp -I../include/ -lmbedtls -llibsodium -lmbedcrypto -pthread
  *  
  * 	-pthread is MANDATORY
- *  -fpermissive is MANDATORY
  * 	-l (MBEDTLS, MBEDCRYPTO, LIBSODIUM etc. only if required)
  */
 
