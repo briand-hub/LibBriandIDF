@@ -1,5 +1,7 @@
 # LibBriandIDF
 
+**UPDATE 2023** new version compatible with IDF v5.0 and wrote as native IDF component available [here](https://github.com/briand-hub/LibEsp32IDF)
+
 C++17 Utility library for ESP32 IDF Framework. Built with PlatformIO and IDF v4.2 (latest stable).
 
 **PlatformIO Package available!**
